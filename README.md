@@ -711,9 +711,7 @@ Relationships ensure that patient records are connected to authorized healthcare
 | Doctor     | Access authorized records, consultations, prescriptions |
 | Pharmacist | Verify prescriptions and dispense medicines             |
 | Admin      | Verify professionals, manage users and organizations    |
-
 ---
-
 # 🔄 Complete Application Workflow
 
 ### Patient
