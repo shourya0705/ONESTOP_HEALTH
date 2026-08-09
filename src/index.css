@@ -1,33 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-medical-50: #eef7ff;
+  --color-medical-100: #d9edff;
+  --color-medical-200: #bce0ff;
+  --color-medical-300: #8eccff;
+  --color-medical-400: #59afff;
+  --color-medical-500: #338dff;
+  --color-medical-600: #1a6df5;
+  --color-medical-700: #1458e1;
+  --color-medical-800: #1748b6;
+  --color-medical-900: #193f8f;
+  --color-medical-950: #142857;
+
+  --color-teal-50: #effcfb;
+  --color-teal-100: #c9f5f3;
+  --color-teal-200: #94e9e6;
+  --color-teal-300: #57d6d4;
+  --color-teal-400: #2bbdbe;
+  --color-teal-500: #15a1a3;
+  --color-teal-600: #108083;
+  --color-teal-700: #126668;
+  --color-teal-800: #135254;
+  --color-teal-900: #144446;
+  --color-teal-950: #05282b;
+
+  --color-teal2-50: #effcfb;
+  --color-teal2-100: #c9f5f3;
+  --color-teal2-200: #94e9e6;
+  --color-teal2-300: #57d6d4;
+  --color-teal2-400: #2bbdbe;
+  --color-teal2-500: #15a1a3;
+  --color-teal2-600: #108083;
+  --color-teal2-700: #126668;
+  --color-teal2-800: #135254;
+  --color-teal2-900: #144446;
+  --color-teal2-950: #05282b;
+
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #0f172a;
+
+  --shadow-soft: 0 2px 20px -6px rgba(15, 23, 42, 0.08);
+  --shadow-elevated: 0 12px 32px -12px rgba(15, 23, 42, 0.18);
+  --shadow-focus-glow: 0 0 0 4px rgba(26, 109, 245, 0.12);
+
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
 
 @layer base {
   body {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #f8fdfc;
-    color: #0f172a;
+    font-family: var(--font-sans);
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
     overflow-x: hidden;
+    font-size: 14px;
   }
 }
 
 /* Custom Healthcare UI Utilities */
 .health-card-gradient {
-  background: linear-gradient(135deg, #024959 0%, #036564 50%, #007a78 100%);
+  background: linear-gradient(135deg, var(--color-medical-900) 0%, var(--color-medical-800) 50%, var(--color-teal-700) 100%);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, var(--color-medical-950) 0%, var(--color-medical-900) 50%, var(--color-teal-800) 100%);
 }
 
 .mint-glow-bg {
-  background: radial-gradient(circle at 50% 30%, rgba(204, 251, 241, 0.6) 0%, rgba(240, 253, 250, 0) 70%);
+  background: radial-gradient(circle at 50% 30%, rgba(201, 245, 243, 0.4) 0%, rgba(248, 250, 252, 0) 70%);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(204, 251, 241, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.7);
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 /* Print styling for Health Card */
@@ -46,7 +108,7 @@
   }
 }
 
-/* Pulse animation for active emergency alert */
+/* Pulse animation for active emergency alert and rings */
 @keyframes emergencyPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.01); }
@@ -56,3 +118,55 @@
   animation: emergencyPulse 2s infinite ease-in-out;
 }
 
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(26, 109, 245, 0.4);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(26, 109, 245, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(26, 109, 245, 0);
+  }
+}
+
+.pulse-ring {
+  animation: pulseRing 2s infinite;
+}
+
+/* Animations */
+@keyframes slideLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slideLeft {
+  animation: slideLeft 0.3s ease-out forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeUp {
+  animation: fadeUp 0.5s ease-out forwards;
+}
+
+/* No Scrollbar Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

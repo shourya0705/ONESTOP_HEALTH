@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Bot, Send, Sparkles, User, FileText, 
-  ShieldAlert, X
+  ShieldAlert, X, Terminal
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -12,6 +12,7 @@ interface ChatMessage {
   timestamp: string;
   sources?: string[];
   isSummary?: boolean;
+  toolCall?: string;
 }
 
 export const AIAssistant: React.FC = () => {
@@ -51,9 +52,11 @@ export const AIAssistant: React.FC = () => {
     setTimeout(() => {
       let responseText = "";
       let sources: string[] = [];
+      let toolCall = "";
 
       // 1. Vaccination query
       if (lower.includes('vaccin') || lower.includes('immuniz')) {
+        toolCall = "ledger.query_vaccination_records(citizen_health_id)";
         const vacs = records.filter(r => r.type === 'VACCINATION');
         if (vacs.length > 0) {
           responseText = `You have **${vacs.length} vaccination record(s)** linked to your Health ID (${currentPatient.healthId}):\n\n` +
@@ -66,6 +69,7 @@ export const AIAssistant: React.FC = () => {
       }
       // 2. Medication / Prescription query
       else if (lower.includes('medicin') || lower.includes('drug') || lower.includes('prescription') || lower.includes('taking')) {
+        toolCall = "ledger.query_active_prescriptions(citizen_id)";
         const activeMeds = prescriptions.filter(p => p.patientId === currentPatient.id);
         const medRecords = records.filter(r => r.type === 'MEDICATION' || r.type === 'CONSULTATION');
         
@@ -73,7 +77,7 @@ export const AIAssistant: React.FC = () => {
           let medListText = "";
           activeMeds.forEach(rx => {
             rx.medicines.forEach(m => {
-              medListText += `• **${m.name}** (${m.dosage}) — ${m.frequency}, ${m.timing} (Prescribed by ${rx.doctorName})\n`;
+              medListText += `• **${m.name}** (${m.dosage}) — {${m.frequency}}, ${m.timing} (Prescribed by ${rx.doctorName})\n`;
             });
           });
 
@@ -87,6 +91,7 @@ export const AIAssistant: React.FC = () => {
       }
       // 3. Surgery / Operation query
       else if (lower.includes('surger') || lower.includes('operat') || lower.includes('appendec')) {
+        toolCall = "ledger.query_surgical_history(citizen_id)";
         const surgeries = records.filter(r => r.type === 'SURGERY');
         if (surgeries.length > 0) {
           const surg = surgeries[0];
@@ -101,6 +106,7 @@ export const AIAssistant: React.FC = () => {
       }
       // 4. Doctor Finder / Specialty Search
       else if (lower.includes('doctor') || lower.includes('find') || lower.includes('cardiolog') || lower.includes('derma') || lower.includes('special')) {
+        toolCall = "directory.search_specialists(specialty)";
         let requestedSpecialty = "General Physician";
         if (lower.includes('cardio') || lower.includes('heart')) requestedSpecialty = "Cardiology";
         if (lower.includes('derma') || lower.includes('skin')) requestedSpecialty = "Dermatology";
@@ -114,6 +120,7 @@ export const AIAssistant: React.FC = () => {
       }
       // 5. Symptom / General Guidance
       else if (lower.includes('headache') || lower.includes('fever') || lower.includes('cough') || lower.includes('pain') || lower.includes('symptom')) {
+        toolCall = "guideline.analyze_symptoms(symptom_list)";
         responseText = `### General Educational Information on Symptoms:\n\n` +
           `• **Common Causes**: Mild fatigue, stress, dehydration, seasonal viral infections, or allergy flare-ups.\n` +
           `• **Self-Care Guidance**: Rest adequately, stay hydrated, and monitor your body temperature.\n` +
@@ -135,7 +142,8 @@ export const AIAssistant: React.FC = () => {
         sender: 'ai',
         text: responseText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sources
+        sources,
+        toolCall
       };
 
       setMessages(prev => [...prev, aiMsg]);
@@ -175,7 +183,8 @@ export const AIAssistant: React.FC = () => {
         sender: 'ai',
         text: summaryText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSummary: true
+        isSummary: true,
+        toolCall: "ledger.summarize_lifetime_history(citizen_id)"
       };
       setMessages(prev => [...prev, aiMsg]);
       setIsTyping(false);
@@ -186,7 +195,7 @@ export const AIAssistant: React.FC = () => {
     <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-96 md:w-[420px] bg-white text-slate-900 shadow-2xl border-l border-slate-200 flex flex-col animate-slideLeft">
       
       {/* AI Header */}
-      <div className="p-4 bg-[#024959] text-white flex items-center justify-between shadow-md">
+      <div className="p-4 bg-medical-950 text-white flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-300/30 flex items-center justify-center text-teal-200 shadow-sm">
             <Bot className="w-6 h-6 animate-pulse" />
@@ -214,9 +223,9 @@ export const AIAssistant: React.FC = () => {
       <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
         <button 
           onClick={handleSummarizeHistory}
-          className="shrink-0 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 font-medium transition-colors"
+          className="shrink-0 bg-medical-50 hover:bg-medical-100 text-medical-800 border border-medical-200 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 font-medium transition-colors"
         >
-          <FileText className="w-3.5 h-3.5 text-teal-600" />
+          <FileText className="w-3.5 h-3.5 text-medical-600" />
           <span>Summarize History</span>
         </button>
 
@@ -236,7 +245,7 @@ export const AIAssistant: React.FC = () => {
       </div>
 
       {/* Chat Conversation Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-sans bg-[#f8fdfc]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-sans bg-slate-50/50">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.sender === 'ai' && (
@@ -247,20 +256,28 @@ export const AIAssistant: React.FC = () => {
 
             <div className={`max-w-[85%] rounded-2xl p-3.5 leading-relaxed ${
               msg.sender === 'user'
-                ? 'bg-teal-600 text-white rounded-br-none shadow-sm font-medium'
+                ? 'bg-medical-500 text-white rounded-br-none shadow-soft font-medium'
                 : msg.isSummary
-                ? 'bg-white border border-teal-200 text-slate-800 rounded-bl-none shadow-md font-mono'
-                : 'bg-white text-slate-800 rounded-bl-none border border-slate-200/80 shadow-xs'
+                ? 'bg-white border border-teal-200 text-slate-800 rounded-bl-none shadow-elevated font-mono'
+                : 'bg-white/95 backdrop-blur-xs text-slate-800 rounded-bl-none border border-slate-200/80 shadow-soft'
             }`}>
+              {/* Optional monospaced API tool call chip */}
+              {msg.toolCall && (
+                <div className="mb-2 text-[10px] font-mono bg-slate-900 text-teal-300 px-2.5 py-1.5 rounded-xl border border-slate-800 flex items-center gap-1.5 w-fit">
+                  <Terminal className="w-3.5 h-3.5 text-teal-400" />
+                  <span>API Tool: {msg.toolCall}</span>
+                </div>
+              )}
+
               <div className="whitespace-pre-line leading-relaxed">
                 {msg.text}
               </div>
 
               {msg.sources && msg.sources.length > 0 && (
                 <div className="mt-2.5 pt-2 border-t border-slate-100 text-[10px] text-teal-700">
-                  <span className="font-semibold block mb-0.5">Verified Data Sources:</span>
+                  <span className="font-bold block mb-0.5">Verified Data Sources:</span>
                   {msg.sources.map((s, idx) => (
-                    <span key={idx} className="inline-block bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200 mr-1 mt-1 font-mono">
+                    <span key={idx} className="inline-block bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200 mr-1 mt-1 font-mono text-[9px]">
                       {s}
                     </span>
                   ))}
@@ -273,7 +290,7 @@ export const AIAssistant: React.FC = () => {
             </div>
 
             {msg.sender === 'user' && (
-              <div className="w-7 h-7 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-full bg-slate-200 border border-slate-350 flex items-center justify-center text-slate-700 shrink-0 mt-0.5">
                 <User className="w-4 h-4" />
               </div>
             )}
@@ -293,10 +310,10 @@ export const AIAssistant: React.FC = () => {
       </div>
 
       {/* Safety Legal Disclaimer */}
-      <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-500 flex items-start gap-1.5">
+      <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-500 flex items-start gap-1.5">
         <ShieldAlert className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
         <p>
-          <strong>Safety Notice:</strong> ONESTOP AI provides educational information from authorized records. It does not diagnose diseases or prescribe medicine.
+          ⚠️ <strong>Safety Disclaimer:</strong> AI guidance is not medical advice. Always consult a qualified physician for healthcare decisions.
         </p>
       </div>
 
@@ -313,12 +330,12 @@ export const AIAssistant: React.FC = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask ONESTOP AI about records or symptoms..." 
-          className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
+          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all"
         />
         <button 
           type="submit" 
           disabled={!input.trim()}
-          className="bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white font-bold px-4 py-2 rounded-full transition-all flex items-center justify-center shadow-xs"
+          className="bg-medical-700 hover:bg-medical-800 disabled:opacity-40 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center justify-center shadow-xs"
         >
           <Send className="w-4 h-4" />
         </button>

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Pill, Activity, 
   Stethoscope, FileText, AlertTriangle, 
-  Filter, Search, Eye, CheckCircle2, Clock
+  Filter, Search, Eye, CheckCircle2, Clock, Lock, Key, ArrowRight, Upload, Plus
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { HealthCard } from '../components/HealthCard';
@@ -10,12 +10,36 @@ import { HealthCard } from '../components/HealthCard';
 export const PatientDashboard: React.FC = () => {
   const { 
     currentPatient, records, prescriptions, consents, 
-    auditLogs, revokeConsent 
+    auditLogs, revokeConsent, grantConsent, denyConsent, addMedicalRecord, activeTab, setActiveTab
   } = useApp();
 
-  const [viewMode, setViewMode] = useState<'OVERVIEW' | 'MEDICATIONS' | 'TIMELINE' | 'HISTORY' | 'AUDIT'>('OVERVIEW');
+  // Sync internal viewMode with global activeTab
+  const viewMode = activeTab === 'medications' ? 'MEDICATIONS' :
+                   activeTab === 'medical-records' ? 'TIMELINE' :
+                   activeTab === 'privacy-access' ? 'AUDIT' :
+                   'OVERVIEW';
+
+  const setViewMode = (mode: 'OVERVIEW' | 'MEDICATIONS' | 'TIMELINE' | 'HISTORY' | 'AUDIT') => {
+    if (mode === 'OVERVIEW') setActiveTab('dashboard');
+    else if (mode === 'MEDICATIONS') setActiveTab('medications');
+    else if (mode === 'TIMELINE' || mode === 'HISTORY') setActiveTab('medical-records');
+    else if (mode === 'AUDIT') setActiveTab('privacy-access');
+  };
+
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Custom record upload state
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [newRecordData, setNewRecordData] = useState({
+    title: '',
+    type: 'CONSULTATION',
+    date: new Date().toISOString().split('T')[0],
+    provider: '',
+    hospital: '',
+    doctorName: '',
+    description: ''
+  });
 
   // Filter records by patient
   const patientRecords = records.filter(r => r.patientId === currentPatient.id);
@@ -34,25 +58,70 @@ export const PatientDashboard: React.FC = () => {
     return matchesType && matchesQuery;
   });
 
+  // Status Tone utility mapping
+  const getStatusBadge = (status: string) => {
+    const s = status.toUpperCase();
+    if (['VERIFIED', 'ACTIVE', 'APPROVED', 'CONFIRMED', 'DISPENSED', 'GRANTED', 'AUTHORIZED'].includes(s)) {
+      return 'bg-emerald-50 text-emerald-700 border border-emerald-250/60';
+    }
+    if (['PENDING', 'SCHEDULED'].includes(s)) {
+      return 'bg-amber-50 text-amber-700 border border-amber-250/60';
+    }
+    if (['REJECTED', 'REVOKED', 'CANCELLED', 'CRITICAL', 'EXPIRED', 'DENIED'].includes(s)) {
+      return 'bg-rose-50 text-rose-700 border border-rose-250/60';
+    }
+    if (['ADMITTED', 'EMERGENCY_OVERRIDE'].includes(s)) {
+      return 'bg-medical-50 text-medical-700 border border-medical-250/60';
+    }
+    return 'bg-slate-50 text-slate-700 border border-slate-200';
+  };
+
+  const handleUploadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addMedicalRecord({
+      patientId: currentPatient.id,
+      type: newRecordData.type as any,
+      title: newRecordData.title,
+      date: newRecordData.date,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      provider: newRecordData.provider || 'Citizen Document Upload',
+      hospital: newRecordData.hospital || 'Personal Records Vault',
+      doctorName: newRecordData.doctorName || 'Self-Reported',
+      description: newRecordData.description,
+      details: {}
+    });
+    setShowUploadModal(false);
+    setNewRecordData({
+      title: '',
+      type: 'CONSULTATION',
+      date: new Date().toISOString().split('T')[0],
+      provider: '',
+      hospital: '',
+      doctorName: '',
+      description: ''
+    });
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans space-y-8">
+    <div className="space-y-6 animate-fadeUp">
       
-      {/* PATIENT HEADER DASHBOARD BANNER (Buttons removed per user request) */}
-      <div className="bg-gradient-to-br from-[#024959] via-[#036564] to-[#007a78] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex items-center justify-between gap-6 border border-teal-400/20">
-        <div className="flex items-center gap-4">
+      {/* 1. CLINICAL HEADER DASHBOARD BANNER */}
+      <div className="bg-gradient-to-br from-medical-900 via-medical-800 to-teal-700 rounded-3xl p-6 sm:p-8 text-white shadow-elevated flex items-center justify-between gap-6 border border-white/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
+        <div className="flex items-center gap-4 relative z-10">
           <img 
             src={currentPatient.photo} 
             alt={currentPatient.name} 
-            className="w-16 h-16 rounded-full object-cover border-2 border-teal-200 shadow-md"
+            className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-md"
           />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{currentPatient.name}</h1>
-              <span className="bg-teal-300/20 text-teal-100 text-xs font-semibold px-3 py-0.5 rounded-full border border-teal-300/30">
-                ACTIVE IDENTITY
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{currentPatient.name}</h1>
+              <span className="bg-teal-400/20 text-teal-100 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-teal-300/30">
+                PATIENT REGISTERED
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-teal-100 font-mono">
+            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-teal-100 font-mono">
               <span>Health ID: <strong className="text-white">{currentPatient.healthId}</strong></span>
               <span>•</span>
               <span>Blood Group: <strong className="text-white">{currentPatient.bloodGroup}</strong></span>
@@ -63,544 +132,457 @@ export const PatientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* DASHBOARD NAVIGATION TABS */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto text-xs font-semibold">
+      {/* 2. SUB-VIEW SELECTOR TABS */}
+      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-3 overflow-x-auto text-xs font-semibold no-scrollbar">
         <button 
           onClick={() => setViewMode('OVERVIEW')}
-          className={`px-4 py-2 rounded-full transition-all ${viewMode === 'OVERVIEW' ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
+          className={`px-4 py-2 rounded-full transition-all ${viewMode === 'OVERVIEW' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
         >
           Dashboard Overview
         </button>
 
         <button 
           onClick={() => setViewMode('MEDICATIONS')}
-          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'MEDICATIONS' ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
+          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'MEDICATIONS' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
         >
-          <Pill className="w-4 h-4 text-teal-200" />
-          <span>Medication History ({patientPrescriptions.flatMap(p => p.medicines).length})</span>
+          <Pill className="w-3.5 h-3.5" />
+          <span>Active Medications ({patientPrescriptions.flatMap(p => p.medicines).length})</span>
         </button>
 
         <button 
           onClick={() => setViewMode('TIMELINE')}
-          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'TIMELINE' ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
+          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'TIMELINE' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
         >
-          <Activity className="w-4 h-4" />
-          <span>Interactive Timeline</span>
-        </button>
-
-        <button 
-          onClick={() => setViewMode('HISTORY')}
-          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'HISTORY' ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
-        >
-          <FileText className="w-4 h-4" />
-          <span>My Medical History</span>
+          <Activity className="w-3.5 h-3.5" />
+          <span>Chronological Timeline</span>
         </button>
 
         <button 
           onClick={() => setViewMode('AUDIT')}
-          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'AUDIT' ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
+          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'AUDIT' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
         >
-          <Eye className="w-4 h-4 text-teal-200" />
-          <span>Who Accessed My Data ({patientAuditLogs.length})</span>
+          <Lock className="w-3.5 h-3.5" />
+          <span>Privacy & Access Logs</span>
         </button>
       </div>
 
-      {/* VIEW 1: OVERVIEW CARDS */}
+      {/* =================================================================== */}
+      {/* 3. SUB-VIEW: OVERVIEW */}
+      {/* =================================================================== */}
       {viewMode === 'OVERVIEW' && (
-        <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Top Quick Status Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Left Column: Health Card & Quick actions */}
+          <div className="space-y-6 lg:col-span-1">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-5 space-y-4">
+              <h3 className="font-bold text-slate-900 text-sm">Your Digital ID Card</h3>
+              <HealthCard patient={currentPatient} />
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-5 space-y-3">
+              <h3 className="font-bold text-slate-900 text-sm">Quick Operations</h3>
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                <button 
+                  onClick={() => setShowUploadModal(true)}
+                  className="bg-medical-50 hover:bg-medical-100 text-medical-800 border border-medical-200 p-3 rounded-xl text-left font-semibold flex items-center justify-between"
+                >
+                  <span>Upload Medical Document</span>
+                  <Plus className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => setViewMode('AUDIT')}
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 p-3 rounded-xl text-left font-semibold flex items-center justify-between"
+                >
+                  <span>Check Access Logs</span>
+                  <Lock className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Summaries & Recent Records */}
+          <div className="lg:col-span-2 space-y-6">
             
-            {/* Card 1: Health ID & Card */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase font-mono">Health ID Status</span>
-                <ShieldCheck className="w-5 h-5 text-teal-600" />
+            {/* Quick Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-4 text-left">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Chronic Conditions</span>
+                <span className="font-extrabold text-sm text-slate-900 mt-1 block">
+                  {currentPatient.criticalConditions.join(', ')}
+                </span>
               </div>
-              <div>
-                <p className="text-xl font-extrabold text-slate-900 font-mono">{currentPatient.healthId}</p>
-                <p className="text-xs text-teal-700 font-semibold mt-0.5">✓ Verified National Registry</p>
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-4 text-left">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Allergies Reported</span>
+                <span className="font-extrabold text-sm text-rose-700 mt-1 block">
+                  {currentPatient.allergies.join(', ')}
+                </span>
               </div>
-            </div>
-
-            {/* Card 2: Allergies */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase font-mono">Allergies & Contra</span>
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-amber-900 truncate">
-                  {currentPatient.allergies.join(', ') || 'None'}
-                </p>
-                <p className="text-[11px] text-slate-500 mt-0.5">Automated warning to doctors</p>
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-4 text-left">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Active Consents</span>
+                <span className="font-extrabold text-sm text-slate-900 mt-1 block">
+                  {patientConsents.filter(c => c.status === 'GRANTED').length} Doctors
+                </span>
               </div>
             </div>
 
-            {/* Card 3: Active Medications */}
-            <div 
-              onClick={() => setViewMode('MEDICATIONS')}
-              className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 cursor-pointer hover:border-teal-400 transition-colors group"
-            >
+            {/* Recent Timeline Preview */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase font-mono">Current Medications</span>
-                <Pill className="w-5 h-5 text-teal-600 group-hover:scale-110 transition-transform" />
+                <h3 className="font-bold text-slate-900 text-sm">Recent Medical Logs</h3>
+                <button onClick={() => setViewMode('TIMELINE')} className="text-xs text-medical-600 font-bold hover:underline">
+                  View Full Timeline
+                </button>
               </div>
-              <div>
-                <p className="text-xl font-extrabold text-slate-900">
-                  {patientPrescriptions.flatMap(p => p.medicines).length} Prescribed Meds
-                </p>
-                <p className="text-xs text-teal-700 font-bold mt-0.5 group-hover:underline">View Medication History →</p>
-              </div>
-            </div>
 
-            {/* Card 4: Vaccinations */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase font-mono">Vaccination History</span>
-                <Activity className="w-5 h-5 text-teal-600" />
-              </div>
-              <div>
-                <p className="text-xl font-extrabold text-slate-900">
-                  {patientRecords.filter(r => r.type === 'VACCINATION').length} Doses Logged
-                </p>
-                <p className="text-xs text-teal-700 font-semibold mt-0.5">COVID-19 Booster Complete</p>
+              <div className="space-y-4 divide-y divide-slate-100">
+                {patientRecords.slice(0, 3).map((rec, idx) => (
+                  <div key={rec.id} className={`pt-4 first:pt-0 flex items-start justify-between text-xs`}>
+                    <div className="flex gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-slate-55 flex items-center justify-center font-bold shrink-0 text-slate-600 bg-slate-100">
+                        {rec.type === 'BIRTH' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
+                        {rec.type === 'VACCINATION' && <ShieldCheck className="w-5 h-5 text-teal-600" />}
+                        {rec.type === 'CONSULTATION' && <Stethoscope className="w-5 h-5 text-medical-600" />}
+                        {rec.type === 'MEDICATION' && <Pill className="w-5 h-5 text-medical-600" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">{rec.title}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{rec.doctorName} • {rec.hospital}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono font-medium">{rec.date}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
           </div>
+        </div>
+      )}
 
-          {/* DEDICATED MEDICATION HISTORY SUMMARY CARD IN OVERVIEW */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
-                  <Pill className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900">Active Medication & Prescriptions History</h3>
-                  <p className="text-xs text-slate-500">Verified doctor prescriptions and pharmacy fulfillment status</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewMode('MEDICATIONS')}
-                className="text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3.5 py-1.5 rounded-full border border-teal-200 transition-colors"
-              >
-                View Full Medication Ledger →
-              </button>
+      {/* =================================================================== */}
+      {/* 4. SUB-VIEW: MEDICATIONS */}
+      {/* =================================================================== */}
+      {viewMode === 'MEDICATIONS' && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-6">
+          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <h3 className="font-bold text-slate-900 text-sm">Currently Active Medications</h3>
+            <span className="bg-medical-50 text-medical-800 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-medical-100">
+              LEDGER VERIFIED
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-400 font-bold bg-slate-50/50">
+                  <th className="py-3 px-4">Medicine & Dosage</th>
+                  <th className="py-3 px-4">Frequency</th>
+                  <th className="py-3 px-4">Timing</th>
+                  <th className="py-3 px-4">Prescribed By</th>
+                  <th className="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {patientPrescriptions.flatMap(p => p.medicines.map((m, idx) => (
+                  <tr key={`${p.id}-${idx}`} className="hover:bg-slate-50/30">
+                    <td className="py-3.5 px-4 font-bold text-slate-900">{m.name} <span className="text-slate-450 font-normal">({m.dosage})</span></td>
+                    <td className="py-3.5 px-4 font-medium text-slate-600">{m.frequency}</td>
+                    <td className="py-3.5 px-4 font-medium text-slate-650">{m.timing}</td>
+                    <td className="py-3.5 px-4 text-slate-500">{p.doctorName} <span className="text-[10px] block">({p.hospital})</span></td>
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${p.dispensed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                        {p.dispensed ? 'DISPENSED' : 'ACTIVE'}
+                      </span>
+                    </td>
+                  </tr>
+                )))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* 5. SUB-VIEW: INTERACTIVE TIMELINE */}
+      {/* =================================================================== */}
+      {viewMode === 'TIMELINE' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Column: Filter panel */}
+          <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-soft p-5 space-y-4 h-fit">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <h3 className="font-bold text-slate-900 text-sm">Filter Timeline</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-              {patientPrescriptions.map(rx => (
-                <div key={rx.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[11px]">
-                        Rx #{rx.id}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                        rx.dispensed ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {rx.dispensed ? <CheckCircle2 className="w-3 h-3 text-teal-700" /> : <Clock className="w-3 h-3" />}
-                        {rx.dispensed ? 'Dispensed' : 'Pending Pharmacy'}
-                      </span>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 font-bold uppercase block font-mono">Search keyword</label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-450 absolute left-3 top-2.5" />
+                  <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search doctor, hospital, diagnosis..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 font-bold uppercase block font-mono">Record Category</label>
+                <select 
+                  value={selectedTypeFilter}
+                  onChange={e => setSelectedTypeFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none font-medium"
+                >
+                  <option value="ALL">All Records</option>
+                  <option value="BIRTH">Birth Records</option>
+                  <option value="VACCINATION">Vaccinations</option>
+                  <option value="CONSULTATION">Consultations</option>
+                  <option value="MEDICATION">Medication Dispensing</option>
+                  <option value="SURGERY">Surgical History</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Chronological Timeline tree */}
+          <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-6">
+            <h3 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3">Unified Medical Timeline Ledger</h3>
+            
+            <div className="relative pl-8 border-l border-slate-200 space-y-6">
+              {filteredRecords.length === 0 ? (
+                <p className="text-slate-400 text-xs italic py-4">No records match the filter criteria.</p>
+              ) : (
+                filteredRecords.map((rec) => (
+                  <div key={rec.id} className="relative animate-fadeUp">
+                    {/* Circle Icon Badge */}
+                    <div className="absolute -left-[42px] top-0 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-soft flex items-center justify-center text-slate-600">
+                      {rec.type === 'BIRTH' && <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600" />}
+                      {rec.type === 'VACCINATION' && <ShieldCheck className="w-4.5 h-4.5 text-teal-600" />}
+                      {rec.type === 'CONSULTATION' && <Stethoscope className="w-4.5 h-4.5 text-medical-600" />}
+                      {rec.type === 'MEDICATION' && <Pill className="w-4.5 h-4.5 text-medical-600" />}
+                      {rec.type === 'SURGERY' && <Activity className="w-4.5 h-4.5 text-rose-600" />}
                     </div>
 
-                    <div>
-                      <p className="font-extrabold text-slate-900">{rx.doctorName}</p>
-                      <p className="text-[11px] text-slate-500">{rx.hospital} • {rx.date}</p>
-                    </div>
-
-                    {/* Medicines List */}
-                    <div className="space-y-1.5 pt-1">
-                      {rx.medicines.map((m, idx) => (
-                        <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/60 text-slate-800 font-mono">
-                          <div className="flex justify-between font-bold text-teal-900">
-                            <span>{m.name}</span>
-                            <span className="text-[10px] bg-teal-50 px-1.5 py-0.2 rounded text-teal-700">{m.dosage}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-500 flex justify-between mt-0.5">
-                            <span>Freq: {m.frequency}</span>
-                            <span>{m.timing}</span>
-                          </div>
+                    <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 rounded-xl p-4 space-y-2 text-xs transition-colors">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 text-sm">{rec.title}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${getStatusBadge(rec.type)}`}>
+                            {rec.type}
+                          </span>
                         </div>
-                      ))}
+                        <span className="text-[10px] text-slate-450 font-mono font-semibold">{rec.date} at {rec.time || 'N/A'}</span>
+                      </div>
+
+                      <p className="text-slate-600 leading-relaxed">{rec.description}</p>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-[10px] text-slate-450 border-t border-slate-100 pt-2 font-mono">
+                        <div>PROVIDER: <strong className="text-slate-700">{rec.provider}</strong></div>
+                        <div>HOSPITAL: <strong className="text-slate-700">{rec.hospital}</strong></div>
+                      </div>
                     </div>
                   </div>
+                ))
+              )}
+            </div>
+          </div>
 
-                  {rx.dispensedBy && (
-                    <p className="text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-200/60">
-                      Fulfilled by: <strong className="text-slate-600">{rx.dispensedBy}</strong>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* 6. SUB-VIEW: PRIVACY & ACCESS LOGS */}
+      {/* =================================================================== */}
+      {viewMode === 'AUDIT' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeUp">
+          
+          {/* Active Consents panel */}
+          <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-soft p-5 space-y-4 h-fit">
+            <h3 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3">Active Practitioner Consents</h3>
+            
+            <div className="space-y-3.5">
+              {patientConsents.length === 0 ? (
+                <p className="text-slate-400 text-xs italic">No access records exist.</p>
+              ) : (
+                patientConsents.map((consent) => (
+                  <div key={consent.id} className="bg-slate-50/50 border border-slate-200/60 p-4 rounded-xl space-y-3 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-800">{consent.providerName}</p>
+                        <p className="text-[10px] text-slate-500 font-mono">{consent.organization}</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${getStatusBadge(consent.status)}`}>
+                        {consent.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-450 font-mono">
+                      <span>Access: {consent.duration}</span>
+                      {consent.expiresAt && (
+                        <span>Expires: {new Date(consent.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-1 border-t border-slate-100">
+                      {consent.status === 'PENDING' && (
+                        <>
+                          <button 
+                            onClick={() => grantConsent(consent.id)}
+                            className="flex-1 bg-emerald-600 text-white font-bold py-1.5 rounded-lg text-[10px] transition-colors"
+                          >
+                            Grant
+                          </button>
+                          <button 
+                            onClick={() => denyConsent(consent.id)}
+                            className="flex-1 bg-rose-600 text-white font-bold py-1.5 rounded-lg text-[10px] transition-colors"
+                          >
+                            Deny
+                          </button>
+                        </>
+                      )}
+                      {consent.status === 'GRANTED' && (
+                        <button 
+                          onClick={() => revokeConsent(consent.id)}
+                          className="w-full bg-rose-600 text-white font-bold py-1.5 rounded-lg text-[10px] transition-colors"
+                        >
+                          Revoke Access Immediately
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Audit Logs list */}
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-4">
+            <h3 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3">Data Access History Log</h3>
+            <div className="space-y-3.5 divide-y divide-slate-100">
+              {patientAuditLogs.map((log, idx) => (
+                <div key={log.id} className="pt-3.5 first:pt-0 text-xs flex justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-800">{log.action}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${getStatusBadge(log.status)}`}>
+                        {log.status}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Accessed by: <strong>{log.actorName}</strong> ({log.actorRole}) • {log.organization}
                     </p>
-                  )}
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono text-right shrink-0 mt-0.5">{log.timestamp}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Middle Layout: Health Card Widget + Recent Medical Timeline Preview */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <div className="lg:col-span-5 space-y-4">
-              <h3 className="font-extrabold text-base text-slate-900">Digital Health Card</h3>
-              <HealthCard patient={currentPatient} />
-            </div>
-
-            <div className="lg:col-span-7 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-base text-slate-900">Recent Medical Activity</h3>
-                <button 
-                  onClick={() => setViewMode('TIMELINE')}
-                  className="text-xs text-teal-700 font-bold hover:underline"
-                >
-                  View Complete Timeline →
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {patientRecords.slice(0, 4).map(rec => (
-                  <div key={rec.id} className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 font-bold text-xs flex items-center justify-center border border-teal-100">
-                        {rec.type.substring(0, 4)}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-sm text-slate-900">{rec.title}</h4>
-                        <p className="text-xs text-slate-500">{rec.hospital} • {rec.doctorName}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-mono font-semibold text-slate-400">{rec.date}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
         </div>
       )}
 
-      {/* VIEW 2: DEDICATED MEDICATION HISTORY LEDGER */}
-      {viewMode === 'MEDICATIONS' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-extrabold text-xl text-slate-900 flex items-center gap-2">
-                <Pill className="w-6 h-6 text-teal-600" />
-                <span>Patient Medication & Prescription History</span>
+      {/* =================================================================== */}
+      {/* 7. CUSTOM MEDICAL RECORD UPLOAD MODAL */}
+      {/* =================================================================== */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-elevated border border-slate-150 text-slate-900 relative">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                <Upload className="w-5 h-5 text-medical-600" />
+                <span>Upload Medical Report</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Complete record of active, chronic, and historical prescribed pharmaceuticals.</p>
-            </div>
-            <span className="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-3.5 py-1.5 rounded-full border border-teal-200">
-              {patientPrescriptions.length} Total Prescriptions
-            </span>
-          </div>
-
-          <div className="space-y-4">
-            {patientPrescriptions.map(rx => (
-              <div key={rx.id} className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md space-y-4">
-                
-                {/* Prescription Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center font-bold">
-                      <Pill className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-extrabold text-base text-slate-900">Rx #{rx.id}</h4>
-                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
-                          rx.dispensed ? 'bg-teal-100 text-teal-800 border border-teal-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
-                        }`}>
-                          {rx.dispensed ? <CheckCircle2 className="w-3 h-3 text-teal-700" /> : <Clock className="w-3 h-3" />}
-                          {rx.dispensed ? 'Dispensed & Verified' : 'Awaiting Pharmacy Fulfillment'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Prescribed by <strong className="text-slate-800">{rx.doctorName}</strong> • {rx.hospital}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-right font-mono text-xs text-slate-500">
-                    <p className="font-bold text-slate-800">📅 Date: {rx.date}</p>
-                    {rx.dispensedBy && <p className="text-[11px] text-teal-700">Fulfilled by: {rx.dispensedBy}</p>}
-                  </div>
-                </div>
-
-                {/* Doctor's Notes if any */}
-                {rx.notes && (
-                  <p className="text-xs bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-700">
-                    <strong className="text-slate-900">Doctor Clinical Notes:</strong> {rx.notes}
-                  </p>
-                )}
-
-                {/* Prescribed Items Table / Grid */}
-                <div className="space-y-2">
-                  <h5 className="text-xs font-bold uppercase font-mono text-slate-500">Prescribed Items & Dosage Instructions:</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {rx.medicines.map((med, idx) => (
-                      <div key={idx} className="p-4 bg-teal-50/40 border border-teal-200/80 rounded-2xl space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h6 className="font-extrabold text-sm text-teal-950 font-mono">{med.name}</h6>
-                          <span className="bg-teal-700 text-white text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">
-                            {med.dosage}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2 text-[11px] font-mono pt-1 text-slate-700">
-                          <div>
-                            <span className="text-slate-400 block text-[9px] uppercase">Frequency</span>
-                            <span className="font-bold text-slate-900">{med.frequency}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block text-[9px] uppercase">Duration</span>
-                            <span className="font-bold text-slate-900">{med.duration}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block text-[9px] uppercase">Timing</span>
-                            <span className="font-bold text-teal-800">{med.timing}</span>
-                          </div>
-                        </div>
-
-                        {med.instructions && (
-                          <p className="text-[10px] text-teal-800 bg-white p-2 rounded-lg border border-teal-100">
-                            <strong>Instructions:</strong> {med.instructions}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* VIEW 3: INTERACTIVE MEDICAL TIMELINE */}
-      {viewMode === 'TIMELINE' && (
-        <div className="space-y-6">
-          
-          {/* Filters Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-teal-600" />
-              <span className="text-xs font-bold text-slate-700">Filter Timeline:</span>
-              
-              <select 
-                value={selectedTypeFilter}
-                onChange={e => setSelectedTypeFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none"
+              <button 
+                onClick={() => setShowUploadModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
               >
-                <option value="ALL">All Categories</option>
-                <option value="BIRTH">Birth Records</option>
-                <option value="VACCINATION">Vaccinations</option>
-                <option value="CONSULTATION">Doctor Consultations</option>
-                <option value="MEDICATION">Medications</option>
-                <option value="SURGERY">Surgeries</option>
-                <option value="LAB_TEST">Lab Tests</option>
-              </select>
+                ✕
+              </button>
             </div>
 
-            <div className="relative flex-1 max-w-xs">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search record title, doctor, hospital..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Timeline Visual Chronology */}
-          <div className="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-3 sm:before:left-4 before:top-2 before:bottom-2 before:w-1 before:bg-gradient-to-b before:from-teal-400 before:via-teal-600 before:to-slate-300">
-            {filteredRecords.map((rec) => (
-              <div key={rec.id} className="relative group">
-                
-                {/* Timeline Dot */}
-                <div className="absolute -left-6 sm:-left-8 top-1 w-6 h-6 rounded-full bg-white border-4 border-teal-600 shadow-md group-hover:scale-125 transition-transform"></div>
-
-                <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md hover:shadow-lg transition-all space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-teal-50 text-teal-800 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase border border-teal-100">
-                        {rec.type}
-                      </span>
-                      <h4 className="font-extrabold text-base text-slate-900">{rec.title}</h4>
-                    </div>
-                    <span className="text-xs font-mono font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg">
-                      📅 {rec.date} • {rec.time}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-700 leading-relaxed">{rec.description}</p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium">
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Healthcare Provider / Hospital</span>
-                      <span className="font-semibold text-slate-800">{rec.hospital}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[10px]">Attending Physician</span>
-                      <span className="font-semibold text-teal-800">{rec.doctorName}</span>
-                    </div>
-                  </div>
-
-                  {rec.details?.medicines && (
-                    <div className="bg-teal-50/60 border border-teal-200 rounded-xl p-3 text-xs space-y-1">
-                      <span className="font-bold text-teal-900 block">Prescribed Medication List:</span>
-                      {rec.details.medicines.map((m, i) => (
-                        <div key={i} className="text-teal-800 font-mono">
-                          • {m.name} ({m.dosage}) — {m.frequency} [{m.timing}]
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
+            <form onSubmit={handleUploadSubmit} className="mt-4 space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 block">Report Title / Consultation Name *</label>
+                <input 
+                  type="text" required
+                  value={newRecordData.title}
+                  onChange={e => setNewRecordData({ ...newRecordData, title: e.target.value })}
+                  placeholder="e.g. Precautionary Vaccine Certificate"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                />
               </div>
-            ))}
-          </div>
 
-        </div>
-      )}
-
-      {/* VIEW 4: CATEGORIZED MEDICAL HISTORY */}
-      {viewMode === 'HISTORY' && (
-        <div className="space-y-6">
-          <h3 className="font-extrabold text-xl text-slate-900">Categorized Medical History Ledger</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Prescribed Medications */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-              <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                <Pill className="w-5 h-5 text-teal-600" />
-                <span>Prescription History</span>
-              </h4>
-              <div className="space-y-2 text-xs">
-                {patientPrescriptions.map(rx => (
-                  <div key={rx.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-                    <div className="flex justify-between font-bold text-slate-900">
-                      <span>Rx #{rx.id}</span>
-                      <span className="text-teal-700">{rx.date}</span>
-                    </div>
-                    <p className="text-slate-500">{rx.doctorName} • {rx.hospital}</p>
-                    <div className="text-[11px] text-teal-900 font-mono font-semibold pt-1 border-t border-slate-200/60">
-                      {rx.medicines.map(m => m.name).join(', ')}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Vaccinations */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-              <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-teal-600" />
-                <span>Vaccination Records</span>
-              </h4>
-              <div className="space-y-2 text-xs">
-                {patientRecords.filter(r => r.type === 'VACCINATION').map(v => (
-                  <div key={v.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex justify-between font-bold text-slate-900">
-                      <span>{v.title}</span>
-                      <span className="text-teal-700">{v.date}</span>
-                    </div>
-                    <p className="text-slate-500 mt-1">{v.hospital} • {v.details?.dose || 'Dose 1'}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Surgeries */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-              <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                <Stethoscope className="w-5 h-5 text-rose-600" />
-                <span>Surgeries & Operations</span>
-              </h4>
-              <div className="space-y-2 text-xs">
-                {patientRecords.filter(r => r.type === 'SURGERY').map(s => (
-                  <div key={s.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex justify-between font-bold text-slate-900">
-                      <span>{s.title}</span>
-                      <span className="text-rose-700">{s.date}</span>
-                    </div>
-                    <p className="text-slate-600 mt-1">{s.description}</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5 font-mono">Surgeon: {s.details?.surgeon || s.doctorName}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* VIEW 5: CONSENT MANAGER & AUDIT LOGS */}
-      {viewMode === 'AUDIT' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-extrabold text-xl text-slate-900">Who Accessed My Records?</h3>
-              <p className="text-xs text-slate-500">Immutable record of every doctor, hospital, and pharmacy access event.</p>
-            </div>
-          </div>
-
-          {/* Active Consents */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-            <h4 className="font-bold text-sm uppercase font-mono text-teal-700">Active Permissions & Grants</h4>
-            {patientConsents.filter(c => c.status === 'GRANTED').length === 0 ? (
-              <p className="text-xs text-slate-500 italic">No active external doctor access permissions currently active.</p>
-            ) : (
-              patientConsents.filter(c => c.status === 'GRANTED').map(c => (
-                <div key={c.id} className="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl flex items-center justify-between text-xs">
-                  <div>
-                    <h5 className="font-bold text-slate-900">{c.providerName} ({c.providerRole})</h5>
-                    <p className="text-slate-600">{c.organization} • Granted for {c.duration}</p>
-                  </div>
-                  <button 
-                    onClick={() => revokeConsent(c.id)}
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-1.5 rounded-full text-xs transition-colors shadow-xs"
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 block">Record Type *</label>
+                  <select 
+                    value={newRecordData.type}
+                    onChange={e => setNewRecordData({ ...newRecordData, type: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
                   >
-                    REVOKE ACCESS
-                  </button>
+                    <option value="CONSULTATION">Consultation</option>
+                    <option value="VACCINATION">Vaccination</option>
+                    <option value="LAB_TEST">Lab Test</option>
+                  </select>
                 </div>
-              ))
-            )}
-          </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 block">Record Date *</label>
+                  <input 
+                    type="date" required
+                    value={newRecordData.date}
+                    onChange={e => setNewRecordData({ ...newRecordData, date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
 
-          {/* Audit Logs Table */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden text-xs">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-900 text-white font-mono text-[11px]">
-                  <th className="p-3.5">Healthcare Actor</th>
-                  <th className="p-3.5">Organization</th>
-                  <th className="p-3.5">Action Executed</th>
-                  <th className="p-3.5">Timestamp</th>
-                  <th className="p-3.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {patientAuditLogs.map(log => (
-                  <tr key={log.id} className="hover:bg-slate-50">
-                    <td className="p-3.5 font-bold text-slate-900">{log.actorName} <span className="text-slate-500 font-normal">({log.actorRole})</span></td>
-                    <td className="p-3.5 text-slate-700">{log.organization}</td>
-                    <td className="p-3.5 text-slate-800">{log.action}</td>
-                    <td className="p-3.5 font-mono text-slate-500">{log.timestamp}</td>
-                    <td className="p-3.5 font-mono font-bold text-teal-700">✓ {log.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 block">Doctor Name</label>
+                  <input 
+                    type="text"
+                    value={newRecordData.doctorName}
+                    onChange={e => setNewRecordData({ ...newRecordData, doctorName: e.target.value })}
+                    placeholder="Dr. S. Kulkarni"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 block">Hospital / Institution</label>
+                  <input 
+                    type="text"
+                    value={newRecordData.hospital}
+                    onChange={e => setNewRecordData({ ...newRecordData, hospital: e.target.value })}
+                    placeholder="St. Martha Hospital"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
 
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 block">Report Description / Details *</label>
+                <textarea 
+                  required
+                  value={newRecordData.description}
+                  onChange={e => setNewRecordData({ ...newRecordData, description: e.target.value })}
+                  placeholder="Summarize report outcomes..."
+                  rows={3}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full bg-medical-700 hover:bg-medical-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-xs"
+              >
+                Upload to Health ID Ledger
+              </button>
+            </form>
+          </div>
         </div>
       )}
 

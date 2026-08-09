@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
-  ShieldCheck, QrCode, Printer, 
-  Share2, Plus, Copy, Check, Info, Lock
+  ShieldCheck, Printer, Copy, Check, Info, Lock, Share2, RefreshCw
 } from 'lucide-react';
 import type { Patient } from '../types';
-import { VerificationBadge } from './VerificationBadge';
 
 interface Props {
   patient: Patient;
@@ -13,8 +11,17 @@ interface Props {
 }
 
 export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
-  const [showQRModal, setShowQRModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [qrToken, setQrToken] = useState(`OSH-IND-TOKEN-${Date.now().toString().slice(-6)}`);
+  const [cardTilted, setCardTilted] = useState(false);
+
+  useEffect(() => {
+    // Soft tilt-on-load micro-animation trigger
+    const timer = setTimeout(() => {
+      setCardTilted(true);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(patient.healthId);
@@ -26,179 +33,164 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
     window.print();
   };
 
+  const handleRotateQR = () => {
+    setQrToken(`OSH-IND-TOKEN-${Math.floor(100000 + Math.random() * 900000)}`);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
-    <>
-      {/* Digital Health Card Container - Styled exactly as reference photo */}
-      <div className="printable-card relative overflow-hidden rounded-3xl shadow-2xl transition-all duration-300 hover:shadow-teal-900/30 text-white bg-gradient-to-br from-[#024959] via-[#036564] to-[#007a78] border border-teal-400/30 max-w-lg mx-auto p-6">
+    <div className="space-y-4">
+      {/* 3D TILT GRADIENT CARD */}
+      <div 
+        className={`printable-card relative overflow-hidden rounded-3xl shadow-elevated border border-white/10 text-white bg-gradient-to-br from-medical-900 via-medical-800 to-teal-700 p-6 transition-all duration-700 ease-out ${
+          cardTilted 
+            ? 'shadow-teal-950/20 [transform:perspective(1000px)_rotateX(2deg)_rotateY(-1deg)]' 
+            : '[transform:perspective(1000px)_rotateX(0deg)_rotateY(0deg)]'
+        } hover:[transform:perspective(1000px)_rotateX(5deg)_rotateY(-3deg)_translateY(-2px)]`}
+      >
         
         {/* Decorative Wave/Circular Overlay Pattern */}
-        <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full border border-teal-300/10 bg-teal-400/5 blur-xl pointer-events-none"></div>
-        <div className="absolute -left-12 -bottom-12 w-64 h-64 rounded-full border border-teal-200/10 bg-emerald-400/5 blur-xl pointer-events-none"></div>
+        <div className="absolute -right-8 -top-8 w-60 h-60 rounded-full bg-teal-400/5 blur-2xl pointer-events-none"></div>
+        <div className="absolute -left-10 -bottom-10 w-60 h-60 rounded-full bg-medical-400/5 blur-2xl pointer-events-none"></div>
         
         {/* Card Header */}
-        <div className="pb-4 flex items-center justify-between border-b border-teal-400/20">
+        <div className="pb-3.5 flex items-center justify-between border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-white text-[#024959] flex items-center justify-center font-black shadow-sm">
-              <Plus className="w-5 h-5 stroke-[3]" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-medical-600 to-teal-500 flex items-center justify-center text-white shadow-sm border border-white/10">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="font-extrabold text-base tracking-wider text-white">
-              ONESTOP <span className="text-teal-200">HEALTH</span>
-            </h3>
+            <div className="flex flex-col leading-none">
+              <span className="font-extrabold text-[13px] tracking-tight text-white">ONESTOP</span>
+              <span className="text-[8px] font-bold tracking-[0.2em] text-teal-300">HEALTH</span>
+            </div>
           </div>
 
-          <VerificationBadge status={patient.isVerified} />
+          <span className="bg-emerald-500/25 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            VERIFIED
+          </span>
         </div>
 
-        {/* Card Main Content Area */}
-        <div className="py-5 grid grid-cols-12 gap-4 items-center">
-          {/* Avatar */}
+        {/* Card Main Content */}
+        <div className="py-5 grid grid-cols-12 gap-5 items-center">
+          
+          {/* Initials Avatar */}
           <div className="col-span-4 flex flex-col items-center">
-            <div className="relative group">
-              <img 
-                src={patient.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'} 
-                alt={patient.name} 
-                className="w-20 h-20 rounded-full object-cover border-2 border-teal-200/60 shadow-lg"
-              />
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-medical-500 text-white flex items-center justify-center text-2xl font-black font-sans shadow-lg border-2 border-white/20 select-none">
+              {getInitials(patient.name)}
             </div>
           </div>
 
-          {/* Patient Details */}
-          <div className="col-span-8 space-y-1.5">
+          {/* Details Column */}
+          <div className="col-span-8 space-y-2">
             <div>
-              <p className="text-[10px] text-teal-200 uppercase font-mono tracking-wider">Citizen Name</p>
-              <h4 className="font-bold text-xl text-white tracking-wide">{patient.name}</h4>
-              <p className="text-xs text-teal-200 font-mono">HEALTH ID: <span className="font-bold text-white">{patient.healthId}</span></p>
-            </div>
-
-            {/* Metadata Grid */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-2 text-xs border-t border-teal-400/20">
-              <div>
-                <span className="text-[9px] text-teal-200 uppercase block font-mono">Date of Birth</span>
-                <span className="font-semibold text-white">{patient.dob}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-teal-200 uppercase block font-mono">Blood Group</span>
-                <span className="font-bold text-teal-100">{patient.bloodGroup}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-teal-200 uppercase block font-mono">Aadhaar</span>
-                <span className="font-mono text-white text-[11px]">{patient.maskedAadhaar}</span>
-              </div>
-              <div className="flex items-center gap-1 cursor-pointer" onClick={() => setShowQRModal(true)}>
-                <QrCode className="w-3.5 h-3.5 text-teal-200" />
-                <span className="text-[10px] text-teal-100 font-mono underline">QR TOKEN</span>
-              </div>
+              <p className="text-[9px] text-teal-200 uppercase font-mono tracking-wider font-semibold">Citizen Name</p>
+              <h4 className="font-bold text-lg text-white tracking-wide">{patient.name}</h4>
+              <code className="text-[11px] text-teal-300 font-mono tracking-wide">ID: {patient.healthId}</code>
             </div>
           </div>
         </div>
 
-        {/* Card Security Footnote matching photo */}
-        <div className="pt-3 border-t border-teal-400/20 flex items-center justify-between text-[11px] text-teal-100">
-          <div className="flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5 text-teal-200" />
-            <span>Consent Protected</span>
+        {/* White-Glass Info Grid */}
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-white/10 backdrop-blur-xs border border-white/15 p-2 rounded-xl flex flex-col">
+            <span className="text-[8px] text-teal-200 uppercase font-mono font-semibold tracking-wider">Date of Birth</span>
+            <span className="font-bold text-white mt-0.5">{patient.dob}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-[10px] font-mono text-teal-200">
-            <span>Secured by ABDM Protocol</span>
+          {/* Accent-filled Blood Group Tile */}
+          <div className="bg-teal-500 text-white border border-teal-400/30 p-2 rounded-xl flex flex-col shadow-xs">
+            <span className="text-[8px] text-teal-100 uppercase font-mono font-semibold tracking-wider">Blood Group</span>
+            <span className="font-extrabold mt-0.5 text-white">{patient.bloodGroup}</span>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-xs border border-white/15 p-2 rounded-xl flex flex-col">
+            <span className="text-[8px] text-teal-200 uppercase font-mono font-semibold tracking-wider">Aadhaar Token</span>
+            <span className="font-mono text-white text-[11px] mt-0.5">{patient.maskedAadhaar}</span>
+          </div>
+
+          {/* White QR Tile Container */}
+          <div className="bg-white p-1.5 rounded-xl flex items-center justify-center shadow-xs">
+            <QRCodeSVG 
+              value={`https://onestophealth.gov.in/verify?id=${patient.healthId}&token=${qrToken}`}
+              size={54}
+              level="H"
+              includeMargin={false}
+              fgColor="#142857"
+            />
           </div>
         </div>
 
-        {/* Quick Action Bar for Interactive UI */}
-        <div className="mt-4 pt-3 border-t border-teal-400/10 flex items-center justify-between text-xs">
-          <button 
-            onClick={onVerifyClick || (() => setShowQRModal(true))}
-            className="bg-white hover:bg-teal-50 text-[#024959] font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all shadow-md active:scale-95"
-          >
-            <ShieldCheck className="w-4 h-4 text-teal-700" />
-            <span>Verify Card</span>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handleCopyId}
-              className="p-1.5 bg-teal-800/40 hover:bg-teal-700/60 rounded-full text-teal-100 border border-teal-400/30 transition-colors"
-              title="Copy Health ID"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-            <button 
-              onClick={() => setShowQRModal(true)}
-              className="p-1.5 bg-teal-800/40 hover:bg-teal-700/60 rounded-full text-teal-100 border border-teal-400/30 transition-colors"
-              title="Show QR Code"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-            </button>
-            <button 
-              onClick={handlePrint}
-              className="p-1.5 bg-teal-800/40 hover:bg-teal-700/60 rounded-full text-teal-100 border border-teal-400/30 transition-colors"
-              title="Print Health Card"
-            >
-              <Printer className="w-3.5 h-3.5" />
-            </button>
+        {/* Red Allergy Chips Section */}
+        {patient.allergies && patient.allergies.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+            <span className="text-[8px] text-red-200 uppercase font-mono font-semibold tracking-wider block">Allergy Contraindications</span>
+            <div className="flex flex-wrap gap-1">
+              {patient.allergies.map((allergy, index) => (
+                <span 
+                  key={index}
+                  className="bg-red-500/20 text-red-200 border border-red-500/30 text-[9px] font-semibold px-2 py-0.5 rounded-full"
+                >
+                  {allergy}
+                </span>
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Card Security Footnote - Dark Strip */}
+        <div className="bg-medical-950/60 -mx-6 -mb-6 mt-4 px-6 py-2.5 flex items-center justify-between text-[10px] text-teal-200 border-t border-medical-800/40">
+          <div className="flex items-center gap-1.5 font-medium">
+            <Lock className="w-3.5 h-3.5 text-teal-300" />
+            <span>Secure Token Only</span>
+          </div>
+          <span className="font-mono text-[9px] text-teal-300/80">Secured under ABDM Protocol</span>
         </div>
 
       </div>
 
-      {/* QR Code Inspection Modal */}
-      {showQRModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-slate-900 relative">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-teal-600" />
-                <h3 className="font-bold text-lg text-slate-900">Digital Health ID QR</h3>
-              </div>
-              <button 
-                onClick={() => setShowQRModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              >
-                ✕
-              </button>
-            </div>
+      {/* CARD ACTION BUTTONS */}
+      <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-xs">
+        <button
+          onClick={handlePrint}
+          className="flex-1 min-w-[120px] bg-medical-700 hover:bg-medical-800 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98]"
+        >
+          <Printer className="w-4 h-4" />
+          <span>Print Card</span>
+        </button>
 
-            <div className="my-6 flex flex-col items-center justify-center p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
-              <div className="p-3 bg-white rounded-xl shadow-md border border-slate-100">
-                <QRCodeSVG 
-                  value={`https://onestophealth.gov.in/verify?id=${patient.healthId}&token=OSH-${Date.now()}`}
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                />
-              </div>
-              <p className="mt-3 font-mono text-sm font-bold text-teal-800">{patient.healthId}</p>
-              <p className="text-xs text-slate-600 mt-1 font-medium">{patient.name}</p>
-            </div>
+        <button
+          onClick={handleRotateQR}
+          className="flex-1 min-w-[120px] bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98]"
+        >
+          <RefreshCw className="w-4 h-4 animate-spin-hover" />
+          <span>Rotate Token</span>
+        </button>
 
-            <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 text-xs text-teal-900 flex items-start gap-2">
-              <Info className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
-              <p>
-                <strong>Privacy Notice:</strong> This QR code encodes a tokenized Health ID. Full medical records require active patient consent authorization.
-              </p>
-            </div>
+        <button
+          onClick={handleCopyId}
+          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-colors"
+          title="Copy Health ID"
+        >
+          {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+        </button>
 
-            <div className="mt-5 flex gap-2">
-              <button
-                onClick={() => {
-                  setShowQRModal(false);
-                  if (onVerifyClick) onVerifyClick();
-                }}
-                className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-full text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Verify ID Token
-              </button>
-              <button
-                onClick={() => setShowQRModal(false)}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-full text-xs"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+        <button
+          onClick={() => alert(`Share token copied: https://onestophealth.gov.in/verify?id=${patient.healthId}&token=${qrToken}`)}
+          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-colors"
+          title="Share Temporary Token"
+        >
+          <Share2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   );
 };
