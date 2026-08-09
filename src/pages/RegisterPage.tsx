@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   ShieldCheck, Phone, User, 
   AlertCircle, CheckCircle2, Lock, ArrowRight, Key,
-  Camera, Stethoscope, Pill, Upload, FileCheck, Building2, HeartPulse
+  Camera, Stethoscope, Pill, Upload, FileCheck, HeartPulse
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { HealthCard } from '../components/HealthCard';
@@ -34,7 +34,7 @@ export const RegisterPage: React.FC = () => {
     address: '',
     bloodGroup: 'O+',
     photo: '', 
-    aadhaarRef: '',
+    aadhaarRef: '', 
     emergencyName: '',
     emergencyPhone: '',
     emergencyRel: 'Family',
@@ -47,31 +47,41 @@ export const RegisterPage: React.FC = () => {
     name: '',
     specialty: 'Cardiology',
     licenseNumber: '',
-    degree: 'MBBS, MD',
     certificationName: '',
     hospital: '',
     phone: '',
-    email: ''
+    email: '',
+    photo: '',
+    aadhaar: ''
   });
+
+  // Doctor Multiple Degrees State
+  const [doctorDegrees, setDoctorDegrees] = useState<string[]>(['MBBS', 'MD']);
+  const [newDocDegree, setNewDocDegree] = useState('');
 
   // Pharmacist Form State
   const [pharmacistForm, setPharmacistForm] = useState({
     name: '',
     pharmacyName: '',
     licenseNumber: '',
-    degree: 'B.Pharm',
     certificationName: '',
     address: '',
     phone: '',
-    email: ''
+    email: '',
+    photo: '',
+    aadhaar: ''
   });
+
+  // Pharmacist Multiple Degrees State
+  const [pharmacistDegrees, setPharmacistDegrees] = useState<string[]>(['B.Pharm']);
+  const [newPharmDegree, setNewPharmDegree] = useState('');
 
   // Simulated OTP state
   const [otpInput, setOtpInput] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('849201');
   const [createdHealthId, setCreatedHealthId] = useState<string | null>(null);
 
-  // Photo Upload Handler for Patient
+  // Photo Upload Handlers
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -84,11 +94,71 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
+  const handleDoctorPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDoctorForm(prev => ({ ...prev, photo: reader.result as string }));
+        setErrorMessage(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePharmacistPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPharmacistForm(prev => ({ ...prev, photo: reader.result as string }));
+        setErrorMessage(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Add/Remove Doctor Degree
+  const handleAddDocDegree = () => {
+    if (newDocDegree.trim() && !doctorDegrees.includes(newDocDegree.trim())) {
+      setDoctorDegrees([...doctorDegrees, newDocDegree.trim()]);
+      setNewDocDegree('');
+    }
+  };
+
+  const handleRemoveDocDegree = (deg: string) => {
+    setDoctorDegrees(doctorDegrees.filter(d => d !== deg));
+  };
+
+  // Add/Remove Pharmacist Degree
+  const handleAddPharmDegree = () => {
+    if (newPharmDegree.trim() && !pharmacistDegrees.includes(newPharmDegree.trim())) {
+      setPharmacistDegrees([...pharmacistDegrees, newPharmDegree.trim()]);
+      setNewPharmDegree('');
+    }
+  };
+
+  const handleRemovePharmDegree = (deg: string) => {
+    setPharmacistDegrees(pharmacistDegrees.filter(d => d !== deg));
+  };
+
   // Preset photos
   const presetPhotos = [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
     'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300'
+  ];
+
+  const presetDoctorPhotos = [
+    'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200',
+    'https://images.unsplash.com/photo-1594824813566-88855ce7890f?auto=format&fit=crop&q=80&w=200',
+    'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=200'
+  ];
+
+  const presetPharmacistPhotos = [
+    'https://images.unsplash.com/photo-1550572017-edd951b55104?auto=format&fit=crop&q=80&w=200',
+    'https://images.unsplash.com/photo-1563213126-a4273aed2016?auto=format&fit=crop&q=80&w=200',
+    'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=200'
   ];
 
   // Submit Login Form
@@ -102,16 +172,16 @@ export const RegisterPage: React.FC = () => {
     }
 
     // Direct mock validation & login routing
-    if (loginMobile.includes('98765 43210')) {
+    if (loginMobile.includes('98765 43210') || loginMobile === '9876543210') {
       setCurrentRole('PATIENT');
       setActiveTab('dashboard');
-    } else if (loginMobile.includes('98222 11100')) {
+    } else if (loginMobile.includes('98222 11100') || loginMobile === '9822211100') {
       setCurrentRole('DOCTOR');
       setActiveTab('doctor-dashboard');
-    } else if (loginMobile.includes('80 2559 8800')) {
+    } else if (loginMobile.includes('80 2559 8800') || loginMobile === '8025598800') {
       setCurrentRole('PHARMACIST');
       setActiveTab('pharmacy-dashboard');
-    } else if (loginMobile.includes('admin') || loginMobile === '9999999999') {
+    } else if (loginMobile.includes('admin') || loginMobile === '9999999999' || loginMobile === '9999999999') {
       setCurrentRole('ADMIN');
       setActiveTab('admin-dashboard');
     } else {
@@ -125,16 +195,16 @@ export const RegisterPage: React.FC = () => {
   const handleAutoFill = (role: 'PATIENT' | 'DOCTOR' | 'PHARMACIST' | 'ADMIN') => {
     setErrorMessage(null);
     if (role === 'PATIENT') {
-      setLoginMobile('+91 98765 43210');
+      setLoginMobile('9876543210');
       setLoginPassword('demo123');
     } else if (role === 'DOCTOR') {
-      setLoginMobile('+91 98222 11100');
+      setLoginMobile('9822211100');
       setLoginPassword('demo123');
     } else if (role === 'PHARMACIST') {
-      setLoginMobile('+91 80 2559 8800');
+      setLoginMobile('8025598800');
       setLoginPassword('demo123');
     } else if (role === 'ADMIN') {
-      setLoginMobile('+91 99999 99999');
+      setLoginMobile('9999999999');
       setLoginPassword('demo123');
     }
   };
@@ -146,6 +216,16 @@ export const RegisterPage: React.FC = () => {
 
     if (!formData.photo) {
       setErrorMessage('A Patient Photo is mandatory for generating a verified Universal Health ID. Please upload or select a photo.');
+      return;
+    }
+
+    if (formData.phone.length !== 10) {
+      setErrorMessage('Patient mobile number must be exactly 10 digits.');
+      return;
+    }
+
+    if (formData.aadhaarRef.length !== 12) {
+      setErrorMessage('Patient Aadhaar Card number must be exactly 12 digits.');
       return;
     }
 
@@ -164,8 +244,28 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!doctorForm.name || !doctorForm.licenseNumber || !doctorForm.degree || !doctorForm.hospital) {
-      setErrorMessage('Please fill in all required medical qualification and licensing fields.');
+    if (!doctorForm.photo) {
+      setErrorMessage('A Doctor Photograph is mandatory for registration.');
+      return;
+    }
+
+    if (doctorForm.phone.length !== 10) {
+      setErrorMessage('Doctor mobile number must be exactly 10 digits.');
+      return;
+    }
+
+    if (doctorForm.aadhaar.length !== 12) {
+      setErrorMessage('Doctor Aadhaar Card number must be exactly 12 digits.');
+      return;
+    }
+
+    if (doctorDegrees.length === 0) {
+      setErrorMessage('At least one Degree / Qualification is mandatory.');
+      return;
+    }
+
+    if (!doctorForm.name || !doctorForm.licenseNumber || !doctorForm.hospital || !doctorForm.phone || !doctorForm.aadhaar) {
+      setErrorMessage('Please fill in all required medical qualification, Aadhaar, phone, and licensing fields.');
       return;
     }
 
@@ -175,12 +275,12 @@ export const RegisterPage: React.FC = () => {
       name: doctorForm.name.startsWith('Dr.') ? doctorForm.name : `Dr. ${doctorForm.name}`,
       specialty: doctorForm.specialty,
       licenseNumber: doctorForm.licenseNumber,
-      degree: doctorForm.degree,
+      degree: doctorDegrees.join(', '),
       certification: certDocName,
       hospital: doctorForm.hospital,
-      phone: doctorForm.phone || '+91 98222 11100',
+      phone: doctorForm.phone,
       email: doctorForm.email || `${doctorForm.name.toLowerCase().replace(/[^a-z]/g, '')}@hospital.org`,
-      avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200'
+      avatarUrl: doctorForm.photo
     });
 
     if (res.success) {
@@ -194,22 +294,43 @@ export const RegisterPage: React.FC = () => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!pharmacistForm.pharmacyName || !pharmacistForm.licenseNumber || !pharmacistForm.degree) {
-      setErrorMessage('Please fill in all required pharmacy licensing and qualification fields.');
+    if (!pharmacistForm.photo) {
+      setErrorMessage('A Pharmacist Photograph is mandatory for registration.');
+      return;
+    }
+
+    if (pharmacistForm.phone.length !== 10) {
+      setErrorMessage('Pharmacist mobile number must be exactly 10 digits.');
+      return;
+    }
+
+    if (pharmacistForm.aadhaar.length !== 12) {
+      setErrorMessage('Pharmacist Aadhaar Card number must be exactly 12 digits.');
+      return;
+    }
+
+    if (pharmacistDegrees.length === 0) {
+      setErrorMessage('At least one Degree / Qualification is mandatory.');
+      return;
+    }
+
+    if (!pharmacistForm.name || !pharmacistForm.pharmacyName || !pharmacistForm.licenseNumber || !pharmacistForm.phone || !pharmacistForm.aadhaar) {
+      setErrorMessage('Please fill in all required pharmacist name, Aadhaar, pharmacy name, phone, and licensing fields.');
       return;
     }
 
     const certDocName = pharmacistForm.certificationName || `Drug_License_${pharmacistForm.licenseNumber.replace(/[^a-zA-Z0-9]/g, '')}.pdf`;
 
     const res = registerPharmacist({
-      name: pharmacistForm.name || pharmacistForm.pharmacyName,
+      name: pharmacistForm.name,
       pharmacyName: pharmacistForm.pharmacyName,
       licenseNumber: pharmacistForm.licenseNumber,
-      degree: pharmacistForm.degree,
+      degree: pharmacistDegrees.join(', '),
       certification: certDocName,
       address: pharmacistForm.address || 'MG Road Metro Station Complex, Bengaluru',
-      phone: pharmacistForm.phone || '+91 80 2559 8800',
-      email: pharmacistForm.email || `pharmacy@onestop.in`
+      phone: pharmacistForm.phone,
+      email: pharmacistForm.email || `pharmacy@onestop.in`,
+      photo: pharmacistForm.photo
     });
 
     if (res.success) {
@@ -266,7 +387,7 @@ export const RegisterPage: React.FC = () => {
         
         {/* Card Header with unified HeartPulse icon logo */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-medical-600 to-teal-500 flex items-center justify-center text-white mx-auto shadow-md">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-medical-600 to-teal-50 flex items-center justify-center text-white mx-auto shadow-md">
             <HeartPulse className="w-7 h-7 stroke-[2.2]" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
@@ -298,15 +419,16 @@ export const RegisterPage: React.FC = () => {
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700">Registered Mobile Number / User ID</label>
+              <label className="block text-xs font-bold text-slate-700">Registered Mobile Number / User ID (10 digits)</label>
               <div className="relative">
                 <Phone className="w-4.5 h-4.5 text-slate-400 absolute left-3.5 top-3.5" />
                 <input 
                   type="text" 
                   required
+                  maxLength={10}
                   value={loginMobile}
-                  onChange={e => setLoginMobile(e.target.value)}
-                  placeholder="+91 98765 00000"
+                  onChange={e => setLoginMobile(e.target.value.replace(/\D/g, ''))}
+                  placeholder="e.g. 9876543210"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-medical-500 focus:ring-2 focus:ring-medical-100 transition-all font-medium"
                 />
               </div>
@@ -396,7 +518,7 @@ export const RegisterPage: React.FC = () => {
                 {/* Photo Upload Section */}
                 <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-xl space-y-3">
                   <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-teal-650" />
+                    <Camera className="w-4 h-4 text-teal-655" />
                     <span>Citizen Photo * (Mandatory verification profile)</span>
                   </label>
                   <div className="flex items-center gap-3">
@@ -441,11 +563,11 @@ export const RegisterPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700">Mobile Number *</label>
+                    <label className="block text-xs font-bold text-slate-700">Mobile Number (10 digits) *</label>
                     <input 
-                      type="tel" required value={formData.phone}
-                      onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+91 98765 43210"
+                      type="tel" required maxLength={10} value={formData.phone}
+                      onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                      placeholder="e.g. 9876543210"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-500 font-medium"
                     />
                   </div>
@@ -474,12 +596,12 @@ export const RegisterPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1 md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700">Aadhaar Last 4 Digits *</label>
+                    <label className="block text-xs font-bold text-slate-700">Aadhaar Card Number (12 digits) *</label>
                     <input 
-                      type="text" required maxLength={4} value={formData.aadhaarRef}
-                      onChange={e => setFormData({ ...formData, aadhaarRef: e.target.value })}
-                      placeholder="e.g. 4892"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono font-bold focus:outline-none"
+                      type="text" required maxLength={12} value={formData.aadhaarRef}
+                      onChange={e => setFormData({ ...formData, aadhaarRef: e.target.value.replace(/\D/g, '') })}
+                      placeholder="e.g. 123456789012"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-teal-500"
                     />
                   </div>
                 </div>
@@ -497,6 +619,42 @@ export const RegisterPage: React.FC = () => {
             {/* B2. DOCTOR FORM REGISTRATION */}
             {step === 'FORM' && registerMode === 'DOCTOR' && (
               <form onSubmit={handleDoctorSubmit} className="space-y-5">
+                
+                {/* Doctor Photo Section */}
+                <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-xl space-y-3">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-teal-650" />
+                    <span>Doctor Photo * (Mandatory verification profile)</span>
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {doctorForm.photo ? (
+                      <img src={doctorForm.photo} alt="Doctor preview" className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 border border-slate-300">
+                        <User className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-1.5">
+                      <label className="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-xl text-[10px] cursor-pointer shadow-2xs inline-block transition-colors">
+                        Upload file
+                        <input type="file" accept="image/*" onChange={handleDoctorPhotoUpload} className="hidden" />
+                      </label>
+                      <div className="flex gap-1.5 items-center">
+                        {presetDoctorPhotos.map((url, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setDoctorForm(prev => ({ ...prev, photo: url }))}
+                            className={`w-7 h-7 rounded-full overflow-hidden border ${doctorForm.photo === url ? 'border-teal-650 ring-2 ring-teal-100 scale-105' : 'border-transparent'}`}
+                          >
+                            <img src={url} alt={`Preset Doctor ${idx}`} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700">Doctor Full Name *</label>
@@ -504,6 +662,16 @@ export const RegisterPage: React.FC = () => {
                       type="text" required value={doctorForm.name}
                       onChange={e => setDoctorForm({ ...doctorForm, name: e.target.value })}
                       placeholder="e.g. Dr. Rajesh Mehta"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Mobile Number (10 digits) *</label>
+                    <input 
+                      type="tel" required maxLength={10} value={doctorForm.phone}
+                      onChange={e => setDoctorForm({ ...doctorForm, phone: e.target.value.replace(/\D/g, '') })}
+                      placeholder="e.g. 9822211100"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none font-medium"
                     />
                   </div>
@@ -519,6 +687,16 @@ export const RegisterPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Aadhaar Card Number (12 digits) *</label>
+                    <input 
+                      type="text" required maxLength={12} value={doctorForm.aadhaar}
+                      onChange={e => setDoctorForm({ ...doctorForm, aadhaar: e.target.value.replace(/\D/g, '') })}
+                      placeholder="e.g. 123456789012"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1 md:col-span-2">
                     <label className="block text-xs font-bold text-slate-700">Specialty *</label>
                     <select
                       value={doctorForm.specialty}
@@ -532,7 +710,7 @@ export const RegisterPage: React.FC = () => {
                     </select>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1 md:col-span-2">
                     <label className="block text-xs font-bold text-slate-700">Primary Hospital / Clinic *</label>
                     <input 
                       type="text" required value={doctorForm.hospital}
@@ -540,6 +718,35 @@ export const RegisterPage: React.FC = () => {
                       placeholder="e.g. Apollo Healthcare Center"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none font-medium"
                     />
+                  </div>
+
+                  {/* Multiple Degrees Section */}
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700">Degrees & Qualifications *</label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {doctorDegrees.map(deg => (
+                        <span key={deg} className="bg-teal-50 text-teal-800 border border-teal-200 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                          <span>{deg}</span>
+                          <button type="button" onClick={() => handleRemoveDocDegree(deg)} className="text-teal-600 hover:text-teal-850 font-extrabold text-[10px]">✕</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={newDocDegree}
+                        onChange={e => setNewDocDegree(e.target.value)}
+                        placeholder="e.g. DNB, FRCS, M.Ch"
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none"
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleAddDocDegree}
+                        className="bg-slate-100 hover:bg-slate-200 border border-slate-205 text-slate-750 font-bold px-4 py-2 rounded-xl text-xs whitespace-nowrap"
+                      >
+                        + Add Degree
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-1 md:col-span-2">
@@ -574,7 +781,63 @@ export const RegisterPage: React.FC = () => {
             {/* B3. PHARMACIST FORM REGISTRATION */}
             {step === 'FORM' && registerMode === 'PHARMACIST' && (
               <form onSubmit={handlePharmacistSubmit} className="space-y-5">
+                
+                {/* Pharmacist Photo Section */}
+                <div className="p-4 bg-teal-50/50 border border-teal-200 rounded-xl space-y-3">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-teal-655" />
+                    <span>Pharmacist Photo * (Mandatory verification profile)</span>
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {pharmacistForm.photo ? (
+                      <img src={pharmacistForm.photo} alt="Pharmacist preview" className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 border border-slate-300">
+                        <User className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-1.5">
+                      <label className="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-xl text-[10px] cursor-pointer shadow-2xs inline-block transition-colors">
+                        Upload file
+                        <input type="file" accept="image/*" onChange={handlePharmacistPhotoUpload} className="hidden" />
+                      </label>
+                      <div className="flex gap-1.5 items-center">
+                        {presetPharmacistPhotos.map((url, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setPharmacistForm(prev => ({ ...prev, photo: url }))}
+                            className={`w-7 h-7 rounded-full overflow-hidden border ${pharmacistForm.photo === url ? 'border-teal-650 ring-2 ring-teal-100 scale-105' : 'border-transparent'}`}
+                          >
+                            <img src={url} alt={`Preset Pharmacist ${idx}`} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Pharmacist Full Name *</label>
+                    <input 
+                      type="text" required value={pharmacistForm.name}
+                      onChange={e => setPharmacistForm({ ...pharmacistForm, name: e.target.value })}
+                      placeholder="e.g. Ramesh Patel"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Mobile Number (10 digits) *</label>
+                    <input 
+                      type="tel" required maxLength={10} value={pharmacistForm.phone}
+                      onChange={e => setPharmacistForm({ ...pharmacistForm, phone: e.target.value.replace(/\D/g, '') })}
+                      placeholder="e.g. 8025598800"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none font-medium"
+                    />
+                  </div>
+
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700">Pharmacy Enterprise Name *</label>
                     <input 
@@ -596,7 +859,64 @@ export const RegisterPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1 md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700">Pharmacy Physical Address *</label>
+                    <label className="block text-xs font-bold text-slate-700">Aadhaar Card Number (12 digits) *</label>
+                    <input 
+                      type="text" required maxLength={12} value={pharmacistForm.aadhaar}
+                      onChange={e => setPharmacistForm({ ...pharmacistForm, aadhaar: e.target.value.replace(/\D/g, '') })}
+                      placeholder="e.g. 987654321012"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  {/* Multiple Degrees Section */}
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700">Degrees & Qualifications *</label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {pharmacistDegrees.map(deg => (
+                        <span key={deg} className="bg-teal-50 text-teal-805 border border-teal-200 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                          <span>{deg}</span>
+                          <button type="button" onClick={() => handleRemovePharmDegree(deg)} className="text-teal-605 hover:text-teal-800 font-extrabold text-[10px]">✕</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        value={newPharmDegree}
+                        onChange={e => setNewPharmDegree(e.target.value)}
+                        placeholder="e.g. M.Pharm, Pharm.D"
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleAddPharmDegree}
+                        className="bg-slate-100 hover:bg-slate-200 border border-slate-205 text-slate-750 font-bold px-4 py-2 rounded-xl text-xs whitespace-nowrap"
+                      >
+                        + Add Degree
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700">Pharmacy Council Certification *</label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="text" value={pharmacistForm.certificationName} readOnly
+                        placeholder="Drug_License_Cert.pdf"
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-700 focus:outline-none"
+                      />
+                      <label className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold px-3 py-2.5 rounded-xl text-xs cursor-pointer flex items-center gap-1 shrink-0">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Attach</span>
+                        <input type="file" onChange={e => {
+                          if (e.target.files?.[0]) setPharmacistForm({ ...pharmacistForm, certificationName: e.target.files[0].name });
+                        }} className="hidden" />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Pharmacy Physical Address *</label>
                     <input 
                       type="text" required value={pharmacistForm.address}
                       onChange={e => setPharmacistForm({ ...pharmacistForm, address: e.target.value })}
@@ -638,7 +958,7 @@ export const RegisterPage: React.FC = () => {
                   />
                   <button 
                     type="submit"
-                    className="w-full bg-teal-650 hover:bg-teal-700 text-white font-bold py-3 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1.5"
+                    className="w-full bg-teal-650 hover:bg-teal-750 text-white font-bold py-3.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1.5"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     <span>VERIFY & GENERATE CARD</span>

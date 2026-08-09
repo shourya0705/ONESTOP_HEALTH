@@ -59,6 +59,7 @@ export interface Pharmacist {
   phone: string;
   email: string;
   verificationStatus: VerificationStatus;
+  photo?: string;
 }
 
 export interface MedicineItem {
