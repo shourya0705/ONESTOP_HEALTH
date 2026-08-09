@@ -267,7 +267,7 @@ export const INITIAL_PRESCRIPTIONS: Prescription[] = [
     dispensed: true,
     dispensedAt: '2026-08-01T17:45:00Z',
     dispensedBy: 'Apollo Pharmacy Central',
-    notes: 'Prescribed post cardiac & respiratory checkup.',
+    notes: 'Prescribed post cardiac & respiratory checkup. Follow up in 30 days.',
     medicines: [
       {
         name: 'Budecort Inhaler 200mcg',
@@ -283,6 +283,70 @@ export const INITIAL_PRESCRIPTIONS: Prescription[] = [
         frequency: '0-0-1',
         duration: '30 Days',
         instructions: 'Take at night before sleep',
+        timing: 'After Food'
+      }
+    ]
+  },
+  {
+    id: 'rx-100',
+    patientId: 'pat-1',
+    patientName: 'Aarav Sharma',
+    patientHealthId: 'OSH-IND-100234',
+    doctorId: 'doc-2',
+    doctorName: 'Dr. Ananya Roy',
+    hospital: 'Manipal Super Specialty Hospital',
+    date: '2026-07-15',
+    dispensed: true,
+    dispensedAt: '2026-07-15T11:20:00Z',
+    dispensedBy: 'MedPlus Health Mart',
+    notes: 'Hypertension maintenance protocol.',
+    medicines: [
+      {
+        name: 'Telmisartan 40mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-0',
+        duration: '60 Days',
+        instructions: 'Take in morning with water',
+        timing: 'Before Food'
+      },
+      {
+        name: 'Pantocid 40mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-0',
+        duration: '15 Days',
+        instructions: 'Antacid protection',
+        timing: 'Before Food'
+      }
+    ]
+  },
+  {
+    id: 'rx-099',
+    patientId: 'pat-1',
+    patientName: 'Aarav Sharma',
+    patientHealthId: 'OSH-IND-100234',
+    doctorId: 'doc-3',
+    doctorName: 'Dr. Rajesh Mehta',
+    hospital: 'Apollo Healthcare Center',
+    date: '2025-07-14',
+    dispensed: true,
+    dispensedAt: '2025-07-14T19:30:00Z',
+    dispensedBy: 'Apollo Pharmacy Central',
+    notes: 'Post laparoscopic appendectomy recovery medications.',
+    medicines: [
+      {
+        name: 'Augmentin 625mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-1',
+        duration: '7 Days',
+        instructions: 'Antibiotic course after surgery',
+        timing: 'After Food'
+      },
+      {
+        name: 'Dolo 650mg',
+        dosage: '1 Tablet',
+        frequency: '1-1-1',
+        duration: '5 Days',
+        instructions: 'Pain & fever relief as needed',
         timing: 'After Food'
       }
     ]

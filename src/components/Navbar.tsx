@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Plus, Bell, Bot, User, Stethoscope, 
-  Pill, Shield, Home, AlertCircle
+  Pill, Shield, Home
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { UserRole } from '../types';
@@ -86,25 +86,6 @@ export const Navbar: React.FC = () => {
               >
                 My Dashboard
               </button>
-              <button 
-                onClick={() => setActiveTab('medical-history')}
-                className={`px-3 py-1.5 rounded-full transition-colors ${activeTab === 'medical-history' ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-600 hover:text-teal-600'}`}
-              >
-                Medical History
-              </button>
-              <button 
-                onClick={() => setActiveTab('consent-manager')}
-                className={`px-3 py-1.5 rounded-full transition-colors ${activeTab === 'consent-manager' ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-600 hover:text-teal-600'}`}
-              >
-                Who Accessed My Data
-              </button>
-              <button 
-                onClick={() => setActiveTab('emergency-profile')}
-                className="px-3 border border-rose-200 py-1.5 rounded-full text-rose-700 hover:bg-rose-50 font-semibold transition-colors flex items-center gap-1.5"
-              >
-                <AlertCircle className="w-4 h-4 text-rose-600 animate-pulse" />
-                <span>Emergency Profile</span>
-              </button>
             </>
           )}
 
@@ -181,7 +162,7 @@ export const Navbar: React.FC = () => {
 
         {/* Right Header Controls */}
         <div className="flex items-center gap-2.5">
-          {currentRole !== 'GUEST' && (
+          {currentRole !== 'GUEST' && currentRole !== 'PATIENT' && (
             <button 
               onClick={() => setActiveTab('register')}
               className="hidden sm:inline-flex bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs px-4 py-2 rounded-full shadow-sm transition-all"

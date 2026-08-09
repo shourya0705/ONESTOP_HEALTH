@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   ShieldCheck, Pill, Activity, 
   Stethoscope, FileText, AlertTriangle, 
-  Filter, Search, Eye, Bot
+  Filter, Search, Eye, CheckCircle2, Clock
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { HealthCard } from '../components/HealthCard';
@@ -10,10 +10,10 @@ import { HealthCard } from '../components/HealthCard';
 export const PatientDashboard: React.FC = () => {
   const { 
     currentPatient, records, prescriptions, consents, 
-    auditLogs, setActiveTab, setAiDrawerOpen, revokeConsent 
+    auditLogs, revokeConsent 
   } = useApp();
 
-  const [viewMode, setViewMode] = useState<'OVERVIEW' | 'TIMELINE' | 'HISTORY' | 'AUDIT'>('OVERVIEW');
+  const [viewMode, setViewMode] = useState<'OVERVIEW' | 'MEDICATIONS' | 'TIMELINE' | 'HISTORY' | 'AUDIT'>('OVERVIEW');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -37,8 +37,8 @@ export const PatientDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans space-y-8">
       
-      {/* PATIENT HEADER DASHBOARD BANNER */}
-      <div className="bg-gradient-to-br from-[#024959] via-[#036564] to-[#007a78] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-teal-400/20">
+      {/* PATIENT HEADER DASHBOARD BANNER (Buttons removed per user request) */}
+      <div className="bg-gradient-to-br from-[#024959] via-[#036564] to-[#007a78] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex items-center justify-between gap-6 border border-teal-400/20">
         <div className="flex items-center gap-4">
           <img 
             src={currentPatient.photo} 
@@ -61,24 +61,6 @@ export const PatientDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button 
-            onClick={() => setAiDrawerOpen(true)}
-            className="bg-white hover:bg-teal-50 text-[#024959] font-bold px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95"
-          >
-            <Bot className="w-4 h-4" />
-            <span>Ask ONESTOP AI</span>
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('emergency-profile')}
-            className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 border border-rose-300/40 font-bold px-4 py-2.5 rounded-full text-xs flex items-center gap-1.5 transition-all"
-          >
-            <AlertTriangle className="w-4 h-4 text-rose-300 animate-pulse" />
-            <span>Emergency Profile</span>
-          </button>
-        </div>
       </div>
 
       {/* DASHBOARD NAVIGATION TABS */}
@@ -88,6 +70,14 @@ export const PatientDashboard: React.FC = () => {
           className={`px-4 py-2 rounded-full transition-all ${viewMode === 'OVERVIEW' ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
         >
           Dashboard Overview
+        </button>
+
+        <button 
+          onClick={() => setViewMode('MEDICATIONS')}
+          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'MEDICATIONS' ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
+        >
+          <Pill className="w-4 h-4 text-teal-200" />
+          <span>Medication History ({patientPrescriptions.flatMap(p => p.medicines).length})</span>
         </button>
 
         <button 
@@ -149,16 +139,19 @@ export const PatientDashboard: React.FC = () => {
             </div>
 
             {/* Card 3: Active Medications */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div 
+              onClick={() => setViewMode('MEDICATIONS')}
+              className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 cursor-pointer hover:border-teal-400 transition-colors group"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase font-mono">Current Medications</span>
-                <Pill className="w-5 h-5 text-teal-600" />
+                <Pill className="w-5 h-5 text-teal-600 group-hover:scale-110 transition-transform" />
               </div>
               <div>
                 <p className="text-xl font-extrabold text-slate-900">
-                  {patientPrescriptions.flatMap(p => p.medicines).length} Active Rx
+                  {patientPrescriptions.flatMap(p => p.medicines).length} Prescribed Meds
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5">Budecort, Montair LC</p>
+                <p className="text-xs text-teal-700 font-bold mt-0.5 group-hover:underline">View Medication History →</p>
               </div>
             </div>
 
@@ -176,6 +169,74 @@ export const PatientDashboard: React.FC = () => {
               </div>
             </div>
 
+          </div>
+
+          {/* DEDICATED MEDICATION HISTORY SUMMARY CARD IN OVERVIEW */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                  <Pill className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Active Medication & Prescriptions History</h3>
+                  <p className="text-xs text-slate-500">Verified doctor prescriptions and pharmacy fulfillment status</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewMode('MEDICATIONS')}
+                className="text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3.5 py-1.5 rounded-full border border-teal-200 transition-colors"
+              >
+                View Full Medication Ledger →
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+              {patientPrescriptions.map(rx => (
+                <div key={rx.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[11px]">
+                        Rx #{rx.id}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                        rx.dispensed ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {rx.dispensed ? <CheckCircle2 className="w-3 h-3 text-teal-700" /> : <Clock className="w-3 h-3" />}
+                        {rx.dispensed ? 'Dispensed' : 'Pending Pharmacy'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="font-extrabold text-slate-900">{rx.doctorName}</p>
+                      <p className="text-[11px] text-slate-500">{rx.hospital} • {rx.date}</p>
+                    </div>
+
+                    {/* Medicines List */}
+                    <div className="space-y-1.5 pt-1">
+                      {rx.medicines.map((m, idx) => (
+                        <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200/60 text-slate-800 font-mono">
+                          <div className="flex justify-between font-bold text-teal-900">
+                            <span>{m.name}</span>
+                            <span className="text-[10px] bg-teal-50 px-1.5 py-0.2 rounded text-teal-700">{m.dosage}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 flex justify-between mt-0.5">
+                            <span>Freq: {m.frequency}</span>
+                            <span>{m.timing}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {rx.dispensedBy && (
+                    <p className="text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-200/60">
+                      Fulfilled by: <strong className="text-slate-600">{rx.dispensedBy}</strong>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Middle Layout: Health Card Widget + Recent Medical Timeline Preview */}
@@ -220,7 +281,106 @@ export const PatientDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 2: INTERACTIVE MEDICAL TIMELINE */}
+      {/* VIEW 2: DEDICATED MEDICATION HISTORY LEDGER */}
+      {viewMode === 'MEDICATIONS' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-xl text-slate-900 flex items-center gap-2">
+                <Pill className="w-6 h-6 text-teal-600" />
+                <span>Patient Medication & Prescription History</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">Complete record of active, chronic, and historical prescribed pharmaceuticals.</p>
+            </div>
+            <span className="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-3.5 py-1.5 rounded-full border border-teal-200">
+              {patientPrescriptions.length} Total Prescriptions
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {patientPrescriptions.map(rx => (
+              <div key={rx.id} className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-md space-y-4">
+                
+                {/* Prescription Header */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center font-bold">
+                      <Pill className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-extrabold text-base text-slate-900">Rx #{rx.id}</h4>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                          rx.dispensed ? 'bg-teal-100 text-teal-800 border border-teal-200' : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}>
+                          {rx.dispensed ? <CheckCircle2 className="w-3 h-3 text-teal-700" /> : <Clock className="w-3 h-3" />}
+                          {rx.dispensed ? 'Dispensed & Verified' : 'Awaiting Pharmacy Fulfillment'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Prescribed by <strong className="text-slate-800">{rx.doctorName}</strong> • {rx.hospital}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right font-mono text-xs text-slate-500">
+                    <p className="font-bold text-slate-800">📅 Date: {rx.date}</p>
+                    {rx.dispensedBy && <p className="text-[11px] text-teal-700">Fulfilled by: {rx.dispensedBy}</p>}
+                  </div>
+                </div>
+
+                {/* Doctor's Notes if any */}
+                {rx.notes && (
+                  <p className="text-xs bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-700">
+                    <strong className="text-slate-900">Doctor Clinical Notes:</strong> {rx.notes}
+                  </p>
+                )}
+
+                {/* Prescribed Items Table / Grid */}
+                <div className="space-y-2">
+                  <h5 className="text-xs font-bold uppercase font-mono text-slate-500">Prescribed Items & Dosage Instructions:</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {rx.medicines.map((med, idx) => (
+                      <div key={idx} className="p-4 bg-teal-50/40 border border-teal-200/80 rounded-2xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h6 className="font-extrabold text-sm text-teal-950 font-mono">{med.name}</h6>
+                          <span className="bg-teal-700 text-white text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full">
+                            {med.dosage}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-[11px] font-mono pt-1 text-slate-700">
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase">Frequency</span>
+                            <span className="font-bold text-slate-900">{med.frequency}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase">Duration</span>
+                            <span className="font-bold text-slate-900">{med.duration}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase">Timing</span>
+                            <span className="font-bold text-teal-800">{med.timing}</span>
+                          </div>
+                        </div>
+
+                        {med.instructions && (
+                          <p className="text-[10px] text-teal-800 bg-white p-2 rounded-lg border border-teal-100">
+                            <strong>Instructions:</strong> {med.instructions}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 3: INTERACTIVE MEDICAL TIMELINE */}
       {viewMode === 'TIMELINE' && (
         <div className="space-y-6">
           
@@ -310,13 +470,35 @@ export const PatientDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 3: CATEGORIZED MEDICAL HISTORY */}
+      {/* VIEW 4: CATEGORIZED MEDICAL HISTORY */}
       {viewMode === 'HISTORY' && (
         <div className="space-y-6">
           <h3 className="font-extrabold text-xl text-slate-900">Categorized Medical History Ledger</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
+            {/* Prescribed Medications */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+              <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                <Pill className="w-5 h-5 text-teal-600" />
+                <span>Prescription History</span>
+              </h4>
+              <div className="space-y-2 text-xs">
+                {patientPrescriptions.map(rx => (
+                  <div key={rx.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                    <div className="flex justify-between font-bold text-slate-900">
+                      <span>Rx #{rx.id}</span>
+                      <span className="text-teal-700">{rx.date}</span>
+                    </div>
+                    <p className="text-slate-500">{rx.doctorName} • {rx.hospital}</p>
+                    <div className="text-[11px] text-teal-900 font-mono font-semibold pt-1 border-t border-slate-200/60">
+                      {rx.medicines.map(m => m.name).join(', ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Vaccinations */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
               <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
@@ -360,7 +542,7 @@ export const PatientDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 4: CONSENT MANAGER & AUDIT LOGS */}
+      {/* VIEW 5: CONSENT MANAGER & AUDIT LOGS */}
       {viewMode === 'AUDIT' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
