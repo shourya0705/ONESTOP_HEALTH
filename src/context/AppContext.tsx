@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { 
   UserRole, Patient, Doctor, Pharmacist, MedicalRecord, 
-  Prescription, ConsentRecord, AuditLog, NotificationItem, MedicineItem, AccessDuration
+  Prescription, ConsentRecord, AuditLog, NotificationItem, MedicineItem, AccessDuration, Appointment
 } from '../types';
 import { 
   INITIAL_PATIENTS, INITIAL_DOCTORS, INITIAL_PHARMACISTS, 
@@ -50,6 +50,10 @@ interface AppContextType {
   addMedicalRecord: (record: Omit<MedicalRecord, 'id'>) => void;
   markNotificationRead: (notifId: string) => void;
   
+  appointments: Appointment[];
+  bookAppointment: (data: Omit<Appointment, 'id' | 'status'>) => { success: boolean; message: string };
+  updateAppointmentStatus: (id: string, status: 'CONFIRMED' | 'REJECTED' | 'COMPLETED') => void;
+  
   searchPatientByHealthId: (healthId: string) => Patient | undefined;
   hasAuthorizedAccess: (patientHealthId: string, providerId: string) => boolean;
 }
@@ -73,6 +77,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentDoctorId] = useState<string>('doc-1');
   const [currentPharmacistId] = useState<string>('pharm-1');
   const [aiDrawerOpen, setAiDrawerOpen] = useState<boolean>(false);
+
+  const [appointments, setAppointments] = useState<Appointment[]>([
+    {
+      id: 'apt-1',
+      patientId: 'pat-1',
+      patientName: 'Aarav Sharma',
+      patientHealthId: 'OSH-IND-100234',
+      doctorId: 'doc-1',
+      doctorName: 'Dr. Rahul Sharma',
+      specialty: 'Cardiology',
+      hospital: 'Fortis National Heart Center',
+      date: '2026-08-12',
+      time: '10:30 AM',
+      reason: 'Routine cardiovascular follow-up checkup',
+      status: 'CONFIRMED'
+    },
+    {
+      id: 'apt-2',
+      patientId: 'pat-1',
+      patientName: 'Aarav Sharma',
+      patientHealthId: 'OSH-IND-100234',
+      doctorId: 'doc-2',
+      doctorName: 'Dr. Ananya Roy',
+      specialty: 'Pulmonology',
+      hospital: 'Manipal Super Specialty Hospital',
+      date: '2026-08-18',
+      time: '03:15 PM',
+      reason: 'Asthma inhaler adjustment and breathing test',
+      status: 'PENDING'
+    }
+  ]);
 
   const currentPatient = patients.find(p => p.id === currentPatientId) || patients[0];
   const currentDoctor = doctors.find(d => d.id === currentDoctorId) || doctors[0];
@@ -242,10 +277,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (c.id === consentId) {
         targetConsent = c;
         const now = new Date();
-        let expireHours = 1;
-        if (c.duration === '30m') expireHours = 0.5;
-        if (c.duration === '24h') expireHours = 24;
-        const expTime = new Date(now.getTime() + expireHours * 3600 * 1000).toISOString();
+        let expTime: string;
+        if (c.duration.startsWith('Till ')) {
+          const dateStr = c.duration.replace('Till ', '');
+          const targetDate = new Date(dateStr);
+          targetDate.setHours(23, 59, 59, 999);
+          expTime = targetDate.toISOString();
+        } else {
+          let expireHours = 1;
+          if (c.duration === '30m') expireHours = 0.5;
+          if (c.duration === '24h') expireHours = 24;
+          expTime = new Date(now.getTime() + expireHours * 3600 * 1000).toISOString();
+        }
         return { ...c, status: 'GRANTED', expiresAt: expTime };
       }
       return c;
@@ -482,6 +525,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read: true } : n));
   };
 
+  const bookAppointment = (data: Omit<Appointment, 'id' | 'status'>) => {
+    const newApt: Appointment = {
+      ...data,
+      id: `apt-${Date.now()}`,
+      status: 'PENDING'
+    };
+    setAppointments(prev => [newApt, ...prev]);
+
+    // Send notification to Doctor
+    const notif: NotificationItem = {
+      id: `notif-apt-${Date.now()}`,
+      userId: data.doctorId,
+      title: 'Appointment Request Received',
+      message: `Patient ${data.patientName} (${data.patientHealthId}) has requested an appointment on ${data.date} at ${data.time}.`,
+      type: 'ALERT',
+      timestamp: 'Just now',
+      read: false
+    };
+    setNotifications(prev => [notif, ...prev]);
+
+    return { success: true, message: 'Appointment request sent successfully.' };
+  };
+
+  const updateAppointmentStatus = (id: string, status: 'CONFIRMED' | 'REJECTED' | 'COMPLETED') => {
+    setAppointments(prev => prev.map(a => {
+      if (a.id === id) {
+        // Send notification to Patient
+        const notif: NotificationItem = {
+          id: `notif-apt-status-${Date.now()}`,
+          userId: a.patientId,
+          title: status === 'CONFIRMED' ? 'Appointment Approved' : 'Appointment Rejected',
+          message: status === 'CONFIRMED'
+            ? `${a.doctorName} accepted your consultation request for ${a.date} at ${a.time}.`
+            : `${a.doctorName} was unable to accept your request for ${a.date} at ${a.time}.`,
+          type: status === 'CONFIRMED' ? 'SUCCESS' : 'WARNING',
+          timestamp: 'Just now',
+          read: false
+        };
+        setNotifications(prevNotif => [notif, ...prevNotif]);
+        return { ...a, status };
+      }
+      return a;
+    }));
+  };
+
   return (
     <AppContext.Provider value={{
       currentRole,
@@ -515,6 +603,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       verifyPharmacistStatus,
       addMedicalRecord,
       markNotificationRead,
+      appointments,
+      bookAppointment,
+      updateAppointmentStatus,
       searchPatientByHealthId,
       hasAuthorizedAccess
     }}>

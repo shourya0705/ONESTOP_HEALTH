@@ -115,7 +115,7 @@ export interface Prescription {
   notes?: string;
 }
 
-export type AccessDuration = '30m' | '1h' | '24h' | 'EMERGENCY';
+export type AccessDuration = '30m' | '1h' | '24h' | 'EMERGENCY' | string;
 
 export interface ConsentRecord {
   id: string;
@@ -151,4 +151,19 @@ export interface NotificationItem {
   type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ALERT';
   timestamp: string;
   read: boolean;
+}
+
+export interface Appointment {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientHealthId: string;
+  doctorId: string;
+  doctorName: string;
+  specialty: string;
+  hospital: string;
+  date: string;
+  time: string;
+  reason: string;
+  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED';
 }

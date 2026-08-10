@@ -14,6 +14,7 @@ import { PharmacistDashboard } from './pages/PharmacistDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { EmergencyProfilePage } from './pages/EmergencyProfilePage';
 import { HealthCard } from './components/HealthCard';
+import { AppointmentsManager } from './components/AppointmentsManager';
 
 import { 
   HeartPulse, LogOut, Menu, X, Bell, User, Stethoscope, 
@@ -153,75 +154,7 @@ const AppContent: React.FC = () => {
         );
       case 'appointments':
       case 'doctor-appointments':
-        return (
-          <div className="space-y-6 animate-fadeUp">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Consultation Appointments</h2>
-                <p className="text-xs text-slate-500">View upcoming and past appointments in the network.</p>
-              </div>
-              <button 
-                onClick={() => alert("Appointment booking is simulated in this prototype.")}
-                className="bg-medical-600 hover:bg-medical-700 text-white font-semibold text-xs px-4.5 py-2.5 rounded-xl shadow-xs transition-all active:scale-95"
-              >
-                Book New Appointment
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-4">
-                  <h3 className="font-bold text-slate-900 text-sm">Upcoming Consultations</h3>
-                  <div className="divide-y divide-slate-100">
-                    <div className="py-4 flex items-start justify-between first:pt-0">
-                      <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-medical-50 text-medical-600 flex items-center justify-center font-bold">
-                          12
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">Dr. Rahul Sharma</p>
-                          <p className="text-xs text-slate-500">Cardiology assessment - Fortis Center</p>
-                          <p className="text-[11px] text-medical-600 font-medium mt-1">Tomorrow at 10:30 AM</p>
-                        </div>
-                      </div>
-                      <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                        CONFIRMED
-                      </span>
-                    </div>
-
-                    <div className="py-4 flex items-start justify-between">
-                      <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-                          18
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">Dr. Ananya Roy</p>
-                          <p className="text-xs text-slate-500">Asthma checkup - Manipal Hospital</p>
-                          <p className="text-[11px] text-teal-600 font-medium mt-1">18 Aug 2026 at 3:15 PM</p>
-                        </div>
-                      </div>
-                      <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                        SCHEDULED
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-5 space-y-3">
-                  <h3 className="font-bold text-slate-900 text-sm">Appointment Policy</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Consultations require verified Health ID validation. Your Health ID will automatically be checked by the clinic when you arrive.
-                  </p>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs text-slate-600">
-                    <strong>Need Help?</strong> Call customer care or ask ONESTOP AI.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <AppointmentsManager />;
       case 'emergency-profile':
         return <EmergencyProfilePage />;
       case 'doctor-dashboard':

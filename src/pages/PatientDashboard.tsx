@@ -73,7 +73,7 @@ export const PatientDashboard: React.FC = () => {
     if (['ADMITTED', 'EMERGENCY_OVERRIDE'].includes(s)) {
       return 'bg-medical-50 text-medical-700 border border-medical-250/60';
     }
-    return 'bg-slate-50 text-slate-700 border border-slate-200';
+    return 'bg-slate-50 text-slate-700 border border-slate-205';
   };
 
   const handleUploadSubmit = (e: React.FormEvent) => {
@@ -229,7 +229,7 @@ export const PatientDashboard: React.FC = () => {
       {/* 4. SUB-VIEW: MEDICATIONS */}
       {/* =================================================================== */}
       {viewMode === 'MEDICATIONS' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeUp">
           
           {/* Section 1: Current Medications */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-4">
@@ -248,7 +248,7 @@ export const PatientDashboard: React.FC = () => {
                 <p className="text-slate-400 text-xs italic py-4 text-center">No active current medications.</p>
               ) : (
                 patientPrescriptions.filter(p => !p.dispensed).flatMap(p => p.medicines).map((m, idx) => (
-                  <div key={idx} className="p-3 bg-slate-50 border border-slate-150 rounded-xl font-bold text-xs text-slate-900 flex items-center gap-2.5">
+                  <div key={idx} className="p-3 bg-slate-50 border border-slate-150 rounded-xl font-bold text-xs text-slate-900 flex items-center gap-2.5 animate-fadeIn">
                     <span className="w-1.5 h-1.5 rounded-full bg-medical-500"></span>
                     <span>{m.name}</span>
                   </div>
@@ -270,15 +270,22 @@ export const PatientDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              {patientPrescriptions.filter(p => p.dispensed).flatMap(p => p.medicines).length === 0 ? (
+              {patientPrescriptions.filter(p => p.dispensed).length === 0 ? (
                 <p className="text-slate-400 text-xs italic py-4 text-center">No past medication history.</p>
               ) : (
-                patientPrescriptions.filter(p => p.dispensed).flatMap(p => p.medicines).map((m, idx) => (
-                  <div key={idx} className="p-3 bg-slate-50/50 border border-slate-200/65 rounded-xl font-semibold text-xs text-slate-600 flex items-center gap-2.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-350"></span>
-                    <span>{m.name}</span>
-                  </div>
-                ))
+                patientPrescriptions.filter(p => p.dispensed).flatMap((p) => 
+                  p.medicines.map((m, idx) => (
+                    <div key={`${p.id}-${idx}`} className="p-3 bg-slate-50/50 border border-slate-200/65 rounded-xl text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-1 hover:bg-slate-55 transition-colors">
+                      <div className="flex items-center gap-2.5 font-semibold text-slate-800">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-350 shrink-0"></span>
+                        <span>{m.name}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-450 font-mono sm:text-right pl-4 sm:pl-0 font-medium">
+                        Prescribed on {p.date} by {p.doctorName}
+                      </span>
+                    </div>
+                  ))
+                )
               )}
             </div>
           </div>
@@ -345,7 +352,7 @@ export const PatientDashboard: React.FC = () => {
                     {/* Circle Icon Badge */}
                     <div className="absolute -left-[42px] top-0 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-soft flex items-center justify-center text-slate-600">
                       {rec.type === 'BIRTH' && <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600" />}
-                      {rec.type === 'VACCINATION' && <ShieldCheck className="w-4.5 h-4.5 text-teal-600" />}
+                      {rec.type === 'VACCINATION' && <ShieldCheck className="w-4.5 h-4.5 text-teal-650" />}
                       {rec.type === 'CONSULTATION' && <Stethoscope className="w-4.5 h-4.5 text-medical-600" />}
                       {rec.type === 'MEDICATION' && <Pill className="w-4.5 h-4.5 text-medical-600" />}
                       {rec.type === 'SURGERY' && <Activity className="w-4.5 h-4.5 text-rose-600" />}
@@ -506,7 +513,7 @@ export const PatientDashboard: React.FC = () => {
                   <select 
                     value={newRecordData.type}
                     onChange={e => setNewRecordData({ ...newRecordData, type: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-205 rounded-xl px-3 py-2 text-xs focus:outline-none"
                   >
                     <option value="CONSULTATION">Consultation</option>
                     <option value="VACCINATION">Vaccination</option>

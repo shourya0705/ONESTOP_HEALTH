@@ -105,8 +105,8 @@ export const HealthCard: React.FC<Props> = ({ patient }) => {
         </div>
 
         {/* White-Glass Info Grid */}
-        <div className="grid grid-cols-4 gap-2.5 text-xs">
-          <div className="col-span-3 grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-10 gap-2.5 text-xs">
+          <div className="col-span-7 grid grid-cols-2 gap-2">
             <div className="bg-white/10 backdrop-blur-xs border border-white/15 p-2 rounded-xl flex flex-col">
               <span className="text-[8px] text-teal-200 uppercase font-mono font-semibold tracking-wider">Date of Birth</span>
               <span className="font-bold text-white mt-0.5">{patient.dob}</span>
@@ -120,10 +120,10 @@ export const HealthCard: React.FC<Props> = ({ patient }) => {
               <span className="font-mono text-white text-[11px] mt-0.5">{patient.maskedAadhaar}</span>
             </div>
           </div>
-          <div className="col-span-1 bg-white p-1.5 rounded-xl flex items-center justify-center shadow-xs self-stretch">
+          <div className="col-span-3 bg-white p-2 rounded-xl flex items-center justify-center shadow-xs self-stretch">
             <QRCodeSVG 
               value={`https://onestophealth.gov.in/verify?id=${patient.healthId}&token=${qrToken}`}
-              size={54}
+              size={76}
               level="H"
               includeMargin={false}
               fgColor="#142857"
