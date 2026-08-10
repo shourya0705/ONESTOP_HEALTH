@@ -113,6 +113,7 @@ export interface Prescription {
   dispensedAt?: string;
   dispensedBy?: string;
   notes?: string;
+  substitutions?: Record<string, string>;
 }
 
 export type AccessDuration = '30m' | '1h' | '24h' | 'EMERGENCY' | string;

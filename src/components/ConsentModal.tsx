@@ -4,8 +4,10 @@ import { useApp } from '../context/AppContext';
 import type { AccessDuration } from '../types';
 
 export const ConsentModal: React.FC = () => {
-  const { consents, currentPatient, grantConsent, denyConsent } = useApp();
+  const { consents, currentPatient, grantConsent, denyConsent, currentRole } = useApp();
   const [selectedDuration, setSelectedDuration] = useState<AccessDuration>('1h');
+
+  if (currentRole !== 'PATIENT') return null;
 
   // Find pending requests for current patient
   const pendingConsents = consents.filter(c => c.patientId === currentPatient.id && c.status === 'PENDING');

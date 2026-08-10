@@ -13,9 +13,32 @@ export const DoctorDashboard: React.FC = () => {
     requestDoctorAccess, emergencyAccessOverride, createPrescription, records, prescriptions, consents, patients, appointments, activeTab, setActiveTab
   } = useApp();
 
+  if (currentDoctor.verificationStatus !== 'VERIFIED') {
+    return (
+      <div className="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-soft text-center py-16 space-y-4 max-w-lg mx-auto mt-10 animate-fadeUp">
+        <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mx-auto shadow-xs">
+          <Lock className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">License Verification Required</h2>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Your workspace access is currently locked. Your medical practitioner license verification request (**License: {currentDoctor.licenseNumber}**) is pending review by the Ministry of Digital Health administrators.
+        </p>
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-left text-xs space-y-1.5 text-slate-655">
+          <p className="font-bold text-slate-850">Registration Details Submitted:</p>
+          <p>• Name: <span className="font-semibold text-slate-700">{currentDoctor.name}</span></p>
+          <p>• Specialty: <span className="font-semibold text-slate-700">{currentDoctor.specialty}</span></p>
+          <p>• Qualifications: <span className="font-mono font-semibold text-slate-700">{currentDoctor.degree}</span></p>
+          <p>• Hospital: <span className="font-semibold text-slate-700">{currentDoctor.hospital}</span></p>
+        </div>
+        <p className="text-[10px] text-slate-400 font-bold">Please switch to the **ADMIN** role in the top switcher bar to approve this credential.</p>
+      </div>
+    );
+  }
+
   // Selected patient for lookup and patient details view
   const [searchHealthId, setSearchHealthId] = useState('OSH-IND-100234');
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [accessRequestedMsg, setAccessRequestedMsg] = useState<string | null>(null);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [emergencyReason, setEmergencyReason] = useState('');
@@ -39,8 +62,14 @@ export const DoctorDashboard: React.FC = () => {
     e.preventDefault();
     setAccessRequestedMsg(null);
     setSuccessBanner(null);
+    setSearchError(null);
     const pat = searchPatientByHealthId(searchHealthId);
-    setSelectedPatient(pat || null);
+    if (!pat) {
+      setSearchError('Patient not found or invalid Health ID.');
+      setSelectedPatient(null);
+    } else {
+      setSelectedPatient(pat);
+    }
   };
 
   // Request Consent
@@ -308,6 +337,12 @@ export const DoctorDashboard: React.FC = () => {
                 >
                   Search Registry ID
                 </button>
+
+                {searchError && (
+                  <div className="bg-rose-50 border border-rose-100 text-rose-700 p-2.5 rounded-xl text-[11px] font-bold text-center animate-fadeIn">
+                    ⚠️ {searchError}
+                  </div>
+                )}
               </form>
             </div>
 

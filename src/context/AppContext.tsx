@@ -42,7 +42,7 @@ interface AppContextType {
   emergencyAccessOverride: (patientHealthId: string, reason: string) => { success: boolean; patient?: Patient };
   
   createPrescription: (patientHealthId: string, medicines: MedicineItem[], notes?: string) => { success: boolean; prescriptionId?: string };
-  dispensePrescription: (prescriptionId: string) => { success: boolean; message: string };
+  dispensePrescription: (prescriptionId: string, substitutions?: Record<string, string>) => { success: boolean; message: string };
   
   verifyDoctorStatus: (doctorId: string, status: 'VERIFIED' | 'REJECTED') => void;
   verifyPharmacistStatus: (pharmacistId: string, status: 'VERIFIED' | 'REJECTED') => void;
@@ -233,21 +233,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return !!activeConsent;
   };
 
-  // Request Access (Doctor -> Patient)
+  // Request Access (Doctor/Pharmacist -> Patient)
   const requestDoctorAccess = (patientHealthId: string, duration: AccessDuration) => {
     const targetPatient = searchPatientByHealthId(patientHealthId);
     if (!targetPatient) {
       return { success: false, message: 'Health ID not found in ONESTOP Health Registry.' };
     }
 
+    const isPharm = currentRole === 'PHARMACIST';
+
     // Create Consent Request
     const newConsent: ConsentRecord = {
       id: `cons-${Date.now()}`,
       patientId: targetPatient.id,
-      providerId: currentDoctor.id,
-      providerName: currentDoctor.name,
-      providerRole: 'DOCTOR',
-      organization: currentDoctor.hospital,
+      providerId: isPharm ? currentPharmacist.id : currentDoctor.id,
+      providerName: isPharm ? currentPharmacist.pharmacyName : currentDoctor.name,
+      providerRole: isPharm ? 'PHARMACIST' : 'DOCTOR',
+      organization: isPharm ? currentPharmacist.pharmacyName : currentDoctor.hospital,
       requestDate: new Date().toISOString(),
       duration: duration,
       status: 'PENDING'
@@ -260,7 +262,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `notif-${Date.now()}`,
       userId: targetPatient.id,
       title: 'New Access Request',
-      message: `${currentDoctor.name} from ${currentDoctor.hospital} requested access to your medical history for ${duration}.`,
+      message: `${newConsent.providerName} requested access to your medical history for ${duration}.`,
       type: 'ALERT',
       timestamp: 'Just now',
       read: false
@@ -439,19 +441,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Pharmacist Dispense Medicine Workflow
-  const dispensePrescription = (prescriptionId: string) => {
+  const dispensePrescription = (prescriptionId: string, substitutions?: Record<string, string>) => {
     const rx = prescriptions.find(p => p.id === prescriptionId);
     if (!rx) return { success: false, message: 'Prescription not found.' };
     if (rx.dispensed) return { success: false, message: 'This prescription has already been dispensed.' };
 
     const nowStr = new Date().toISOString();
     
+    // Determine dispensed medicines names taking substitutions into account
+    const finalMedicines = rx.medicines.map(m => {
+      if (substitutions && substitutions[m.name]) {
+        return {
+          ...m,
+          name: `${substitutions[m.name]} (Substituted for ${m.name})`
+        };
+      }
+      return m;
+    });
+
     // 1. Mark prescription as dispensed
     setPrescriptions(prev => prev.map(p => p.id === prescriptionId ? {
       ...p,
       dispensed: true,
       dispensedAt: nowStr,
-      dispensedBy: currentPharmacist.pharmacyName
+      dispensedBy: currentPharmacist.pharmacyName,
+      substitutions: substitutions
     } : p));
 
     // 2. Automatically append MEDICATION record to patient's Medical History Timeline
@@ -459,15 +473,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `rec-disp-${Date.now()}`,
       patientId: rx.patientId,
       type: 'MEDICATION',
-      title: `Pharmacy Dispensed: ${rx.medicines.map(m => m.name).join(', ')}`,
+      title: `Pharmacy Dispensed: ${finalMedicines.map(m => m.name).join(', ')}`,
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       provider: currentPharmacist.pharmacyName,
       hospital: currentPharmacist.pharmacyName,
       doctorName: rx.doctorName,
-      description: `Fulfilled under Prescription #${rx.id}. Dispensed by ${currentPharmacist.name}.`,
+      description: `Fulfilled under Prescription #${rx.id}. Dispensed by ${currentPharmacist.name}.${
+        substitutions && Object.keys(substitutions).length > 0
+          ? ` Substitutions made: ${Object.entries(substitutions).map(([orig, sub]) => `${orig} -> ${sub}`).join(', ')}.`
+          : ''
+      }`,
       details: {
-        medicines: rx.medicines
+        medicines: finalMedicines
       }
     };
     setRecords(prev => [newRecord, ...prev]);
@@ -478,7 +496,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       actorName: currentPharmacist.pharmacyName,
       actorRole: 'PHARMACIST',
       organization: currentPharmacist.pharmacyName,
-      action: `Fulfilled & Dispensed Prescription #${rx.id}`,
+      action: `Fulfilled & Dispensed Prescription #${rx.id}${
+        substitutions && Object.keys(substitutions).length > 0 ? ' with substitutions' : ''
+      }`,
       patientId: rx.patientId,
       patientName: rx.patientName,
       recordType: 'Pharmacy Dispensing',
@@ -492,7 +512,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `notif-disp-${Date.now()}`,
       userId: rx.patientId,
       title: 'Medication Dispensed',
-      message: `Your prescription #${rx.id} was successfully dispensed by ${currentPharmacist.pharmacyName} and added to your Medical History Timeline.`,
+      message: `Your prescription #${rx.id} was successfully dispensed by ${currentPharmacist.pharmacyName} and added to your Medical History Timeline.${
+        substitutions && Object.keys(substitutions).length > 0 ? ' (Substitutions applied)' : ''
+      }`,
       type: 'SUCCESS',
       timestamp: 'Just now',
       read: false
