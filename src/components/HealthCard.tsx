@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
-  ShieldCheck, Printer, Copy, Check, Info, Lock, Share2, RefreshCw
+  ShieldCheck, Printer, Copy, Check, Lock, Share2, RefreshCw
 } from 'lucide-react';
 import type { Patient } from '../types';
 
@@ -10,7 +10,7 @@ interface Props {
   onVerifyClick?: () => void;
 }
 
-export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
+export const HealthCard: React.FC<Props> = ({ patient }) => {
   const [copied, setCopied] = useState(false);
   const [qrToken, setQrToken] = useState(`OSH-IND-TOKEN-${Date.now().toString().slice(-6)}`);
   const [cardTilted, setCardTilted] = useState(false);
@@ -82,10 +82,15 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
         {/* Card Main Content */}
         <div className="py-5 grid grid-cols-12 gap-5 items-center">
           
-          {/* Initials Avatar */}
-          <div className="col-span-4 flex flex-col items-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-medical-500 text-white flex items-center justify-center text-2xl font-black font-sans shadow-lg border-2 border-white/20 select-none">
-              {getInitials(patient.name)}
+          {/* Avatar with pulse ring */}
+          <div className="col-span-4 flex flex-col items-center justify-center relative">
+            <div className="absolute w-18 h-18 rounded-full border border-white/20 animate-ping opacity-60"></div>
+            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-teal-400 to-medical-500 text-white flex items-center justify-center text-xl font-bold font-sans shadow-md border-2 border-white select-none">
+              {patient.photo ? (
+                <img src={patient.photo} alt={patient.name} className="w-full h-full object-cover" />
+              ) : (
+                <span>{getInitials(patient.name)}</span>
+              )}
             </div>
           </div>
 
@@ -93,32 +98,29 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
           <div className="col-span-8 space-y-2">
             <div>
               <p className="text-[9px] text-teal-200 uppercase font-mono tracking-wider font-semibold">Citizen Name</p>
-              <h4 className="font-bold text-lg text-white tracking-wide">{patient.name}</h4>
-              <code className="text-[11px] text-teal-300 font-mono tracking-wide">ID: {patient.healthId}</code>
+              <h4 className="font-bold text-lg text-white tracking-wide leading-tight">{patient.name}</h4>
+              <code className="text-[11px] text-teal-300 font-mono tracking-wide block mt-0.5">ID: {patient.healthId}</code>
             </div>
           </div>
         </div>
 
         {/* White-Glass Info Grid */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="bg-white/10 backdrop-blur-xs border border-white/15 p-2 rounded-xl flex flex-col">
-            <span className="text-[8px] text-teal-200 uppercase font-mono font-semibold tracking-wider">Date of Birth</span>
-            <span className="font-bold text-white mt-0.5">{patient.dob}</span>
+        <div className="grid grid-cols-4 gap-2.5 text-xs">
+          <div className="col-span-3 grid grid-cols-2 gap-2">
+            <div className="bg-white/10 backdrop-blur-xs border border-white/15 p-2 rounded-xl flex flex-col">
+              <span className="text-[8px] text-teal-200 uppercase font-mono font-semibold tracking-wider">Date of Birth</span>
+              <span className="font-bold text-white mt-0.5">{patient.dob}</span>
+            </div>
+            <div className="bg-teal-500 text-white border border-teal-400/30 p-2 rounded-xl flex flex-col shadow-xs">
+              <span className="text-[8px] text-teal-100 uppercase font-mono font-semibold tracking-wider">Blood Group</span>
+              <span className="font-extrabold mt-0.5 text-white">{patient.bloodGroup}</span>
+            </div>
+            <div className="bg-white/10 backdrop-blur-xs border border-white/15 p-2 rounded-xl flex flex-col col-span-2">
+              <span className="text-[8px] text-teal-200 uppercase font-mono font-semibold tracking-wider">Aadhaar Token</span>
+              <span className="font-mono text-white text-[11px] mt-0.5">{patient.maskedAadhaar}</span>
+            </div>
           </div>
-
-          {/* Accent-filled Blood Group Tile */}
-          <div className="bg-teal-500 text-white border border-teal-400/30 p-2 rounded-xl flex flex-col shadow-xs">
-            <span className="text-[8px] text-teal-100 uppercase font-mono font-semibold tracking-wider">Blood Group</span>
-            <span className="font-extrabold mt-0.5 text-white">{patient.bloodGroup}</span>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-xs border border-white/15 p-2 rounded-xl flex flex-col">
-            <span className="text-[8px] text-teal-200 uppercase font-mono font-semibold tracking-wider">Aadhaar Token</span>
-            <span className="font-mono text-white text-[11px] mt-0.5">{patient.maskedAadhaar}</span>
-          </div>
-
-          {/* White QR Tile Container */}
-          <div className="bg-white p-1.5 rounded-xl flex items-center justify-center shadow-xs">
+          <div className="col-span-1 bg-white p-1.5 rounded-xl flex items-center justify-center shadow-xs self-stretch">
             <QRCodeSVG 
               value={`https://onestophealth.gov.in/verify?id=${patient.healthId}&token=${qrToken}`}
               size={54}
@@ -131,7 +133,7 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
 
         {/* Red Allergy Chips Section */}
         {patient.allergies && patient.allergies.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+          <div className="mt-3.5 pt-3.5 border-t border-white/10 space-y-1.5">
             <span className="text-[8px] text-red-200 uppercase font-mono font-semibold tracking-wider block">Allergy Contraindications</span>
             <div className="flex flex-wrap gap-1">
               {patient.allergies.map((allergy, index) => (
@@ -147,7 +149,7 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
         )}
 
         {/* Card Security Footnote - Dark Strip */}
-        <div className="bg-medical-950/60 -mx-6 -mb-6 mt-4 px-6 py-2.5 flex items-center justify-between text-[10px] text-teal-200 border-t border-medical-800/40">
+        <div className="bg-medical-950/60 -mx-6 -mb-6 mt-4.5 px-6 py-2.5 flex items-center justify-between text-[10px] text-teal-200 border-t border-medical-800/40">
           <div className="flex items-center gap-1.5 font-medium">
             <Lock className="w-3.5 h-3.5 text-teal-300" />
             <span>Secure Token Only</span>
@@ -169,7 +171,7 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
 
         <button
           onClick={handleRotateQR}
-          className="flex-1 min-w-[120px] bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98]"
+          className="flex-1 min-w-[120px] bg-teal-600 hover:bg-teal-705 text-white font-bold py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-[0.98]"
         >
           <RefreshCw className="w-4 h-4 animate-spin-hover" />
           <span>Rotate Token</span>
@@ -177,7 +179,7 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
 
         <button
           onClick={handleCopyId}
-          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-colors"
+          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-colors flex items-center justify-center"
           title="Copy Health ID"
         >
           {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
@@ -185,7 +187,7 @@ export const HealthCard: React.FC<Props> = ({ patient, onVerifyClick }) => {
 
         <button
           onClick={() => alert(`Share token copied: https://onestophealth.gov.in/verify?id=${patient.healthId}&token=${qrToken}`)}
-          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-colors"
+          className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-colors flex items-center justify-center"
           title="Share Temporary Token"
         >
           <Share2 className="w-4 h-4" />

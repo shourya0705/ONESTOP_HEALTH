@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, Pill, Activity, 
-  Stethoscope, FileText, AlertTriangle, 
-  Filter, Search, Eye, CheckCircle2, Clock, Lock, Key, ArrowRight, Upload, Plus
+  Stethoscope, FileText, 
+  Filter, Search, CheckCircle2, Clock, Lock, Upload, Plus
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { HealthCard } from '../components/HealthCard';
@@ -112,7 +112,7 @@ export const PatientDashboard: React.FC = () => {
           <img 
             src={currentPatient.photo} 
             alt={currentPatient.name} 
-            className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-md"
+            className="w-16 h-16 rounded-full object-cover border-2 border-white/20 shadow-md animate-pulseRing"
           />
           <div>
             <div className="flex items-center gap-2">
@@ -130,40 +130,6 @@ export const PatientDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* 2. SUB-VIEW SELECTOR TABS */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200 pb-3 overflow-x-auto text-xs font-semibold no-scrollbar">
-        <button 
-          onClick={() => setViewMode('OVERVIEW')}
-          className={`px-4 py-2 rounded-full transition-all ${viewMode === 'OVERVIEW' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
-        >
-          Dashboard Overview
-        </button>
-
-        <button 
-          onClick={() => setViewMode('MEDICATIONS')}
-          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'MEDICATIONS' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
-        >
-          <Pill className="w-3.5 h-3.5" />
-          <span>Active Medications ({patientPrescriptions.flatMap(p => p.medicines).length})</span>
-        </button>
-
-        <button 
-          onClick={() => setViewMode('TIMELINE')}
-          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'TIMELINE' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
-        >
-          <Activity className="w-3.5 h-3.5" />
-          <span>Chronological Timeline</span>
-        </button>
-
-        <button 
-          onClick={() => setViewMode('AUDIT')}
-          className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${viewMode === 'AUDIT' ? 'bg-medical-700 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
-        >
-          <Lock className="w-3.5 h-3.5" />
-          <span>Privacy & Access Logs</span>
-        </button>
       </div>
 
       {/* =================================================================== */}
@@ -235,12 +201,12 @@ export const PatientDashboard: React.FC = () => {
               </div>
 
               <div className="space-y-4 divide-y divide-slate-100">
-                {patientRecords.slice(0, 3).map((rec, idx) => (
+                {patientRecords.slice(0, 3).map((rec) => (
                   <div key={rec.id} className={`pt-4 first:pt-0 flex items-start justify-between text-xs`}>
                     <div className="flex gap-3">
                       <div className="w-9 h-9 rounded-xl bg-slate-55 flex items-center justify-center font-bold shrink-0 text-slate-600 bg-slate-100">
                         {rec.type === 'BIRTH' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-                        {rec.type === 'VACCINATION' && <ShieldCheck className="w-5 h-5 text-teal-600" />}
+                        {rec.type === 'VACCINATION' && <ShieldCheck className="w-5 h-5 text-teal-650" />}
                         {rec.type === 'CONSULTATION' && <Stethoscope className="w-5 h-5 text-medical-600" />}
                         {rec.type === 'MEDICATION' && <Pill className="w-5 h-5 text-medical-600" />}
                       </div>
@@ -263,42 +229,60 @@ export const PatientDashboard: React.FC = () => {
       {/* 4. SUB-VIEW: MEDICATIONS */}
       {/* =================================================================== */}
       {viewMode === 'MEDICATIONS' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-6">
-          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-sm">Currently Active Medications</h3>
-            <span className="bg-medical-50 text-medical-800 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-medical-100">
-              LEDGER VERIFIED
-            </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Section 1: Current Medications */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-4">
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <Pill className="w-4.5 h-4.5 text-medical-600 animate-pulse" />
+                <span>Current Medications</span>
+              </h3>
+              <span className="bg-teal-50 text-teal-800 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border border-teal-100">
+                ACTIVE
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {patientPrescriptions.filter(p => !p.dispensed).flatMap(p => p.medicines).length === 0 ? (
+                <p className="text-slate-400 text-xs italic py-4 text-center">No active current medications.</p>
+              ) : (
+                patientPrescriptions.filter(p => !p.dispensed).flatMap(p => p.medicines).map((m, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 border border-slate-150 rounded-xl font-bold text-xs text-slate-900 flex items-center gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-medical-500"></span>
+                    <span>{m.name}</span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-bold bg-slate-50/50">
-                  <th className="py-3 px-4">Medicine & Dosage</th>
-                  <th className="py-3 px-4">Frequency</th>
-                  <th className="py-3 px-4">Timing</th>
-                  <th className="py-3 px-4">Prescribed By</th>
-                  <th className="py-3 px-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {patientPrescriptions.flatMap(p => p.medicines.map((m, idx) => (
-                  <tr key={`${p.id}-${idx}`} className="hover:bg-slate-50/30">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{m.name} <span className="text-slate-450 font-normal">({m.dosage})</span></td>
-                    <td className="py-3.5 px-4 font-medium text-slate-600">{m.frequency}</td>
-                    <td className="py-3.5 px-4 font-medium text-slate-650">{m.timing}</td>
-                    <td className="py-3.5 px-4 text-slate-500">{p.doctorName} <span className="text-[10px] block">({p.hospital})</span></td>
-                    <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${p.dispensed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                        {p.dispensed ? 'DISPENSED' : 'ACTIVE'}
-                      </span>
-                    </td>
-                  </tr>
-                )))}
-              </tbody>
-            </table>
+          {/* Section 2: Medication History */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-4">
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <Clock className="w-4.5 h-4.5 text-slate-500" />
+                <span>Medication History</span>
+              </h3>
+              <span className="bg-slate-100 text-slate-655 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border border-slate-200">
+                DISPENSED
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {patientPrescriptions.filter(p => p.dispensed).flatMap(p => p.medicines).length === 0 ? (
+                <p className="text-slate-400 text-xs italic py-4 text-center">No past medication history.</p>
+              ) : (
+                patientPrescriptions.filter(p => p.dispensed).flatMap(p => p.medicines).map((m, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50/50 border border-slate-200/65 rounded-xl font-semibold text-xs text-slate-600 flex items-center gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-350"></span>
+                    <span>{m.name}</span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
+
         </div>
       )}
 
@@ -463,7 +447,7 @@ export const PatientDashboard: React.FC = () => {
           <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-soft p-6 space-y-4">
             <h3 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-3">Data Access History Log</h3>
             <div className="space-y-3.5 divide-y divide-slate-100">
-              {patientAuditLogs.map((log, idx) => (
+              {patientAuditLogs.map((log) => (
                 <div key={log.id} className="pt-3.5 first:pt-0 text-xs flex justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
@@ -472,7 +456,7 @@ export const PatientDashboard: React.FC = () => {
                         {log.status}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-500 mt-1">
+                    <p className="text-[10px] text-slate-550 mt-1">
                       Accessed by: <strong>{log.actorName}</strong> ({log.actorRole}) • {log.organization}
                     </p>
                   </div>
@@ -498,7 +482,7 @@ export const PatientDashboard: React.FC = () => {
               </h3>
               <button 
                 onClick={() => setShowUploadModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-655 p-1 rounded-lg"
               >
                 ✕
               </button>
@@ -512,7 +496,7 @@ export const PatientDashboard: React.FC = () => {
                   value={newRecordData.title}
                   onChange={e => setNewRecordData({ ...newRecordData, title: e.target.value })}
                   placeholder="e.g. Precautionary Vaccine Certificate"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none"
                 />
               </div>
 
@@ -535,7 +519,7 @@ export const PatientDashboard: React.FC = () => {
                     type="date" required
                     value={newRecordData.date}
                     onChange={e => setNewRecordData({ ...newRecordData, date: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -548,7 +532,7 @@ export const PatientDashboard: React.FC = () => {
                     value={newRecordData.doctorName}
                     onChange={e => setNewRecordData({ ...newRecordData, doctorName: e.target.value })}
                     placeholder="Dr. S. Kulkarni"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -558,7 +542,7 @@ export const PatientDashboard: React.FC = () => {
                     value={newRecordData.hospital}
                     onChange={e => setNewRecordData({ ...newRecordData, hospital: e.target.value })}
                     placeholder="St. Martha Hospital"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -571,7 +555,7 @@ export const PatientDashboard: React.FC = () => {
                   onChange={e => setNewRecordData({ ...newRecordData, description: e.target.value })}
                   placeholder="Summarize report outcomes..."
                   rows={3}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none"
                 />
               </div>
 
