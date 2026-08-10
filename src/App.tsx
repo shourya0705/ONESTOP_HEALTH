@@ -445,11 +445,11 @@ const AppContent: React.FC = () => {
             {/* Profile Avatar Block */}
             <div className="flex items-center gap-2.5 pl-2.5 border-l border-slate-200">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-medical-600 to-teal-500 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
-                {currentRole === 'PATIENT' ? currentPatient.name[0] : currentRole === 'DOCTOR' ? currentDoctor.name.replace('Dr. ', '')[0] : currentPharmacist.name[0]}
+                {currentRole === 'PATIENT' ? currentPatient.name[0] : currentRole === 'DOCTOR' ? currentDoctor.name.replace('Dr. ', '')[0] : currentRole === 'ADMIN' ? 'A' : currentPharmacist.name[0]}
               </div>
               <div className="hidden lg:block text-left leading-tight">
                 <p className="text-xs font-bold text-slate-800">
-                  {currentRole === 'PATIENT' ? currentPatient.name : currentRole === 'DOCTOR' ? currentDoctor.name : currentPharmacist.name}
+                  {currentRole === 'PATIENT' ? currentPatient.name : currentRole === 'DOCTOR' ? currentDoctor.name : currentRole === 'ADMIN' ? 'System Administrator' : currentPharmacist.name}
                 </p>
                 <p className="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">
                   {currentRole === 'PATIENT' ? 'PATIENT' : currentRole}

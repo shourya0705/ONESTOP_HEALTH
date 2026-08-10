@@ -39,7 +39,8 @@ export const RegisterPage: React.FC = () => {
     emergencyPhone: '',
     emergencyRel: 'Family',
     allergies: '',
-    criticalConditions: ''
+    criticalConditions: '',
+    password: ''
   });
 
   // Doctor Form State
@@ -52,7 +53,8 @@ export const RegisterPage: React.FC = () => {
     phone: '',
     email: '',
     photo: '',
-    aadhaar: ''
+    aadhaar: '',
+    password: ''
   });
 
   // Doctor Multiple Degrees State
@@ -69,7 +71,8 @@ export const RegisterPage: React.FC = () => {
     phone: '',
     email: '',
     photo: '',
-    aadhaar: ''
+    aadhaar: '',
+    password: ''
   });
 
   // Pharmacist Multiple Degrees State
@@ -280,7 +283,8 @@ export const RegisterPage: React.FC = () => {
       hospital: doctorForm.hospital,
       phone: doctorForm.phone,
       email: doctorForm.email || `${doctorForm.name.toLowerCase().replace(/[^a-z]/g, '')}@hospital.org`,
-      avatarUrl: doctorForm.photo
+      avatarUrl: doctorForm.photo,
+      password: doctorForm.password
     });
 
     if (res.success) {
@@ -330,7 +334,8 @@ export const RegisterPage: React.FC = () => {
       address: pharmacistForm.address || 'MG Road Metro Station Complex, Bengaluru',
       phone: pharmacistForm.phone,
       email: pharmacistForm.email || `pharmacy@onestop.in`,
-      photo: pharmacistForm.photo
+      photo: pharmacistForm.photo,
+      password: pharmacistForm.password
     });
 
     if (res.success) {
@@ -365,7 +370,8 @@ export const RegisterPage: React.FC = () => {
       },
       allergies: formData.allergies ? formData.allergies.split(',').map(s => s.trim()) : ['None Reported'],
       criticalConditions: formData.criticalConditions ? formData.criticalConditions.split(',').map(s => s.trim()) : ['None'],
-      maskedAadhaar: `XXXX-XXXX-${formData.aadhaarRef.slice(-4)}`
+      maskedAadhaar: `XXXX-XXXX-${formData.aadhaarRef.slice(-4)}`,
+      password: formData.password
     });
 
     if (result.success && result.healthId) {
@@ -604,6 +610,36 @@ export const RegisterPage: React.FC = () => {
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono font-bold focus:outline-none focus:border-teal-500"
                     />
                   </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Password (for future sign in) *</label>
+                    <input 
+                      type="password" required value={formData.password}
+                      onChange={e => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Enter secure password"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-500 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Allergies (leave blank if none)</label>
+                    <input 
+                      type="text" value={formData.allergies}
+                      onChange={e => setFormData({ ...formData, allergies: e.target.value })}
+                      placeholder="e.g. Penicillin, Dust Mites"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-500 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700">Pre-existing Diseases / Critical Conditions (leave blank if none)</label>
+                    <input 
+                      type="text" value={formData.criticalConditions}
+                      onChange={e => setFormData({ ...formData, criticalConditions: e.target.value })}
+                      placeholder="e.g. Asthma (Mild), Hypertension"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-500 font-medium"
+                    />
+                  </div>
                 </div>
 
                 <button 
@@ -766,6 +802,16 @@ export const RegisterPage: React.FC = () => {
                       </label>
                     </div>
                   </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700">Password (for future sign in) *</label>
+                    <input 
+                      type="password" required value={doctorForm.password}
+                      onChange={e => setDoctorForm({ ...doctorForm, password: e.target.value })}
+                      placeholder="Enter secure password"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-500 font-medium"
+                    />
+                  </div>
                 </div>
 
                 <button 
@@ -922,6 +968,16 @@ export const RegisterPage: React.FC = () => {
                       onChange={e => setPharmacistForm({ ...pharmacistForm, address: e.target.value })}
                       placeholder="e.g. MG Road Metro Complex, Bengaluru"
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Password (for future sign in) *</label>
+                    <input 
+                      type="password" required value={pharmacistForm.password}
+                      onChange={e => setPharmacistForm({ ...pharmacistForm, password: e.target.value })}
+                      placeholder="Enter secure password"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-teal-500 font-medium"
                     />
                   </div>
                 </div>

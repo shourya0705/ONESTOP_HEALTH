@@ -32,6 +32,7 @@ export interface Patient {
   maskedAadhaar: string; // e.g., XXXX-XXXX-4892
   isVerified: boolean;
   createdAt: string;
+  password?: string;
 }
 
 export interface Doctor {
@@ -46,6 +47,7 @@ export interface Doctor {
   email: string;
   verificationStatus: VerificationStatus;
   avatarUrl?: string;
+  password?: string;
 }
 
 export interface Pharmacist {
@@ -60,6 +62,7 @@ export interface Pharmacist {
   email: string;
   verificationStatus: VerificationStatus;
   photo?: string;
+  password?: string;
 }
 
 export interface MedicineItem {
